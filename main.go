@@ -63,9 +63,9 @@ func main() {
 		ResponseHeaderTimeout: 3 * time.Second,
 		TLSHandshakeTimeout:   3 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
-		DisableKeepAlives:     false,
-		MaxIdleConns:          16,
-		MaxIdleConnsPerHost:   8,
+		DisableKeepAlives:     true,
+		MaxIdleConns:          0,
+		MaxIdleConnsPerHost:   0,
 		MaxConnsPerHost:       4096,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
