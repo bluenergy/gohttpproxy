@@ -55,7 +55,6 @@ func main() {
 	p := martian.NewProxy()
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
-	martian.ProxyIdleTimeout = 2 * time.Minute
 	defer p.Close()
 
 	tr := &http.Transport{
