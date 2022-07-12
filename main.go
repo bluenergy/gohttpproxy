@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
@@ -84,7 +85,9 @@ func main() {
 
 	log.Infof("Starting proxy on : %s", l.Addr().String())
 
-	go p.Serve(l)
+	_ = ants.Submit(func() {
+		p.Serve(l)
+	})
 
 	signChannel := make(chan os.Signal, 2)
 	signal.Notify(signChannel, os.Interrupt, os.Kill, syscall.SIGTERM)
