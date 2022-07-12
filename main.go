@@ -53,7 +53,7 @@ func main() {
 
 	log.Infof(" log level %v", *lv)
 
-	martian.AntsPool, _ = ants.NewPool(2000)
+	martian.AntsPool, _ = ants.NewPool(2000, ants.WithNonblocking(true))
 
 	for i := 0; i < 20; i++ {
 		tp := i
