@@ -5,7 +5,6 @@ import (
 	"flag"
 	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
@@ -85,7 +84,7 @@ func main() {
 
 	log.Infof("Starting proxy on : %s", l.Addr().String())
 
-	_ = ants.Submit(func() {
+	_ = martian.AntsPool.Submit(func() {
 		p.Serve(l)
 	})
 
