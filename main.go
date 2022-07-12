@@ -55,6 +55,12 @@ func main() {
 
 	martian.AntsPool, _ = ants.NewPool(2000)
 
+	for i := 0; i < 20; i++ {
+		tp := i
+		_ = martian.AntsPool.Submit(func() {
+			log.Infof("预热antsPool: %d", tp)
+		})
+	}
 	p := martian.NewProxy()
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
