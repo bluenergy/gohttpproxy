@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
@@ -51,6 +52,8 @@ func main() {
 	log.SetLogger(sugar)
 
 	log.Infof(" log level %v", *lv)
+
+	martian.AntsPool, _ = ants.NewPool(2000)
 
 	p := martian.NewProxy()
 	//设置读写超时为30分钟，也就是10小时
