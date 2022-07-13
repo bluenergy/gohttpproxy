@@ -103,7 +103,9 @@ func main() {
 
 	<-signChannel
 
-	close(signChannel)
+	if signChannel != nil {
+		close(signChannel)
+	}
 	log.Infof("Notice: shutting down")
 	os.Exit(0)
 }
