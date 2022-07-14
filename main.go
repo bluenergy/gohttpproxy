@@ -8,6 +8,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	rawlog "log"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -54,7 +55,8 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 20 * time.Second
-	martian.AntsPool, _ = ants.NewPool(2000, ants.WithNonblocking(true))
+	martian.AntsPool, _ = ants.NewPool(20000, ants.WithNonblocking(true),
+		ants.WithExpiryDuration(martian.DefaultProxyIdleTimeout), ants.WithLogger(rawlog.New(os.Stdout, "", rawlog.LstdFlags)))
 
 	for i := 0; i < 20; i++ {
 		tp := i
