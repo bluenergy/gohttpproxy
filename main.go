@@ -55,7 +55,7 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 20 * time.Second
-	martian.AntsPool, _ = ants.NewPool(20000, ants.WithNonblocking(true),
+	martian.AntsPool, _ = ants.NewPool(1000, ants.WithNonblocking(true),
 		ants.WithExpiryDuration(martian.DefaultProxyIdleTimeout), ants.WithLogger(rawlog.New(os.Stdout, "", rawlog.LstdFlags)))
 
 	for i := 0; i < 20; i++ {
