@@ -113,7 +113,7 @@ func main() {
 		p.Serve(l)
 	})
 
-	signChannel := make(chan os.Signal, 2)
+	signChannel := make(chan os.Signal, 3)
 	signal.Notify(signChannel, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	<-signChannel
