@@ -73,6 +73,10 @@ func main() {
 			log.Infof("预热antsPool: %d", tp)
 		})
 	}
+
+	go func() {
+		sugar.Info(http.ListenAndServe("localhost:6062", nil))
+	}()
 	p := martian.NewProxy()
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
