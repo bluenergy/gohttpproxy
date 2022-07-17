@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -23,18 +22,6 @@ var (
 	sugar *zap.SugaredLogger
 )
 
-func APStat() {
-	tk := time.NewTicker(10 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-tk.C:
-				ap := martian.GetAP()
-				sugar.Infof(" pool上限: %d 当前: %d", ap.Cap(), ap.Running())
-			}
-		}
-	}()
-}
 func main() {
 	atom := zap.NewAtomicLevel()
 
@@ -66,13 +53,6 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 20 * time.Second
-	APStat()
-	for i := 0; i < 20; i++ {
-		tp := i
-		martian.APSubmit(func() {
-			log.Infof("预热antsPool: %d", tp)
-		})
-	}
 
 	go func() {
 		sugar.Info(http.ListenAndServe("localhost:6062", nil))

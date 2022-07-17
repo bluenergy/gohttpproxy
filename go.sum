@@ -11,6 +11,8 @@ github.com/cnmade/martian/v3 v3.4.1 h1:KlZVLrx7qDqA3lceN94aHskd/Zess6umxMZIsey7R
 github.com/cnmade/martian/v3 v3.4.1/go.mod h1:EWorkGm49zefOFNzD+ZyI3uybhewn8ydTH7+HjqTjts=
 github.com/cnmade/martian/v3 v3.4.2 h1:xQxVIkD5H0eCDQ6f8TJFQutAe1m7Wra9D5/QTxlLZHg=
 github.com/cnmade/martian/v3 v3.4.2/go.mod h1:EWorkGm49zefOFNzD+ZyI3uybhewn8ydTH7+HjqTjts=
+github.com/cnmade/martian/v3 v3.4.3 h1:CbAwDruifCh7eLy/3H7cfOU4iWO6fMG8829ptv5VSt8=
+github.com/cnmade/martian/v3 v3.4.3/go.mod h1:EWorkGm49zefOFNzD+ZyI3uybhewn8ydTH7+HjqTjts=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
