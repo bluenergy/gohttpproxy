@@ -5,10 +5,8 @@ import (
 	"flag"
 	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	rawlog "log"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -55,12 +53,10 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 20 * time.Second
-	martian.AntsPool, _ = ants.NewPool(1000, ants.WithNonblocking(true),
-		ants.WithExpiryDuration(martian.DefaultProxyIdleTimeout), ants.WithLogger(rawlog.New(os.Stdout, "", rawlog.LstdFlags)))
 
 	for i := 0; i < 20; i++ {
 		tp := i
-		_ = martian.AntsPool.Submit(func() {
+		martian.APSubmit(func() {
 			log.Infof("预热antsPool: %d", tp)
 		})
 	}
