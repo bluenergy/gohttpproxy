@@ -17,11 +17,24 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
-	lv   = flag.Int("lv", log.Debug, "default log level")
-	h    = flag.Bool("h", false, "help")
+	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
+	lv    = flag.Int("lv", log.Debug, "default log level")
+	h     = flag.Bool("h", false, "help")
+	sugar *zap.SugaredLogger
 )
 
+func APStat() {
+	tk := time.NewTicker(10 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-tk.C:
+				ap := martian.GetAP()
+				sugar.Infof(" pool上限: %d 当前: %d", ap.Cap(), ap.Running())
+			}
+		}
+	}()
+}
 func main() {
 	atom := zap.NewAtomicLevel()
 
@@ -38,7 +51,7 @@ func main() {
 
 	atom.SetLevel(zap.DebugLevel)
 
-	sugar := logger.Sugar()
+	sugar = logger.Sugar()
 	flag.Parse()
 	if *h {
 		flag.PrintDefaults()
@@ -53,7 +66,7 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 20 * time.Second
-
+	APStat()
 	for i := 0; i < 20; i++ {
 		tp := i
 		martian.APSubmit(func() {
