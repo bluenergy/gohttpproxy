@@ -90,18 +90,13 @@ func main() {
 
 	log.Infof("Starting proxy on : %s", l.Addr().String())
 
-	martian.APSubmit(func() {
-		p.Serve(l)
-	})
+	go p.Serve(l)
 
 	signChannel := make(chan os.Signal, 3)
 	signal.Notify(signChannel, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	<-signChannel
 
-	if signChannel != nil {
-		close(signChannel)
-	}
 	log.Infof("Notice: shutting down")
 	os.Exit(0)
 }
