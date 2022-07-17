@@ -92,7 +92,7 @@ func main() {
 
 	log.Infof("Starting proxy on : %s", l.Addr().String())
 
-	_ = martian.AntsPool.Submit(func() {
+	martian.APSubmit(func() {
 		p.Serve(l)
 	})
 
