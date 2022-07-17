@@ -8,6 +8,10 @@ require (
 )
 
 require (
+	github.com/go-errors/errors v1.4.2 // indirect
+	github.com/panjf2000/ants/v2 v2.5.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/text v0.3.7 // indirect
 )
