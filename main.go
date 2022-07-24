@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -53,7 +52,7 @@ func main() {
 
 	log.Infof(" log level %v", *lv)
 
-	martian.DefaultProxyIdleTimeout = 20 * time.Second
+	martian.DefaultProxyIdleTimeout = 120 * time.Second
 
 	go func() {
 		sugar.Info(http.ListenAndServe("localhost:6062", nil))
