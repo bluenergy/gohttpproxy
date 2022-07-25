@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/trafficshape"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 )
 
 // Tests that sending data of length 600 bytes with max bandwidth of 100 bytes/s takes

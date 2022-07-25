@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // DefaultBitrate represents the bitrate that will be for all url regexs for which a shape

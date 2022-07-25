@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // ModifierType is the HTTP message type.

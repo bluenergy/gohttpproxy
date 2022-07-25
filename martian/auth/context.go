@@ -17,7 +17,7 @@ package auth
 import (
 	"sync"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 const key = "auth.Context"

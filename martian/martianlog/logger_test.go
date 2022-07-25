@@ -22,9 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func ExampleLogger() {

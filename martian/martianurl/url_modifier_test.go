@@ -20,7 +20,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 func TestNewModifier(t *testing.T) {

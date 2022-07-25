@@ -18,10 +18,10 @@ import (
 	"net/http"
 	"testing"
 
-	_ "github.com/cnmade/martian/v3/header"
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestFilterModifyRequest(t *testing.T) {

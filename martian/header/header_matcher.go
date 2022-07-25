@@ -17,7 +17,7 @@ package header
 import (
 	"net/http"
 
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 // Matcher is a conditonal evalutor of request or

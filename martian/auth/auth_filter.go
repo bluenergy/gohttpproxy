@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // Filter filters RequestModifiers and ResponseModifiers by auth ID.

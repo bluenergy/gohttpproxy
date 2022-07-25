@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Matcher is a conditional evaluator of request urls to be used in

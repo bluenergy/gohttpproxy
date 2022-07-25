@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"errors"
-	"github.com/cnmade/martian/v3/retry"
+	"github.com/gohttpproxy/gohttpproxy/martian/retry"
 	"github.com/panjf2000/ants/v2"
 	"io"
 	"net"
@@ -32,11 +32,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/mitm"
-	"github.com/cnmade/martian/v3/nosigpipe"
-	"github.com/cnmade/martian/v3/proxyutil"
-	"github.com/cnmade/martian/v3/trafficshape"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 )
 
 const MaxRetries = 25

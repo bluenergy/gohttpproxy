@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Handler is an http.Handler that returns the request and response

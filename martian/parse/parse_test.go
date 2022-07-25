@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
 )
 
 func TestFromJSON(t *testing.T) {

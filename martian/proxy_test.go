@@ -31,10 +31,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/mitm"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 type tempError struct{}

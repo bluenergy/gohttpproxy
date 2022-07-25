@@ -20,7 +20,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 type exportHandler struct {

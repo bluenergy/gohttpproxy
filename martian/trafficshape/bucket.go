@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Bucket is a generic leaky bucket that drains at a configurable interval and

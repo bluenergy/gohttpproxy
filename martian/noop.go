@@ -17,7 +17,7 @@ package martian
 import (
 	"net/http"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 type noopModifier struct {

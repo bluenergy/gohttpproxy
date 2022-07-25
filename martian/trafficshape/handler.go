@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Handler configures a trafficshape.Listener.

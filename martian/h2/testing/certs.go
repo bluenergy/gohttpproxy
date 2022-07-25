@@ -27,8 +27,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/cnmade/martian/v3/cybervillains"
-	"github.com/cnmade/martian/v3/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian/cybervillains"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"google.golang.org/grpc/credentials"
 )
 

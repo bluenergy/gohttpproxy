@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // Hop-by-hop headers as defined by RFC2616.

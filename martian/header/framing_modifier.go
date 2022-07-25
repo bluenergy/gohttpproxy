@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // NewBadFramingModifier makes a best effort to fix inconsistencies in the

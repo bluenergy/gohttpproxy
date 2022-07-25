@@ -17,7 +17,7 @@ package martian
 import (
 	"flag"
 
-	mlog "github.com/cnmade/martian/v3/log"
+	mlog "github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 var (

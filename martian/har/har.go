@@ -34,10 +34,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/messageview"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/messageview"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 // Logger maintains request and response log entries.

@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestModifier(t *testing.T) {

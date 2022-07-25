@@ -25,7 +25,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestRequestViewHeadersOnly(t *testing.T) {

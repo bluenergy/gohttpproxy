@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 func TestApiForwarder(t *testing.T) {

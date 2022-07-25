@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestMarkAPIRequestsWithHeader(t *testing.T) {

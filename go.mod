@@ -3,7 +3,6 @@ module github.com/gohttpproxy/gohttpproxy
 go 1.18
 
 require (
-	github.com/cnmade/martian/v3 v3.4.7
 	github.com/go-errors/errors v1.4.2
 	github.com/golang/snappy v0.0.3
 	github.com/panjf2000/ants/v2 v2.5.0

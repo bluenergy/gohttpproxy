@@ -22,11 +22,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/proxyutil"
-	"github.com/cnmade/martian/v3/verify"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/verify"
 
-	_ "github.com/cnmade/martian/v3/header"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
 )
 
 func TestNoModifiers(t *testing.T) {

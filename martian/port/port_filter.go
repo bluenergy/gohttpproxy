@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 var noop = martian.Noop("port.Filter")

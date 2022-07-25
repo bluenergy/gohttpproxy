@@ -18,7 +18,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // NewForwardedModifier sets the X-Forwarded-For, X-Forwarded-Proto,

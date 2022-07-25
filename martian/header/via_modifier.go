@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 const viaLoopKey = "via.LoopDetection"

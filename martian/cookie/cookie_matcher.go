@@ -17,7 +17,7 @@ package cookie
 import (
 	"net/http"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Matcher is a conditonal evalutor of request or

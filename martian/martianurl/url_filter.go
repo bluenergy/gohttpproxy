@@ -18,10 +18,10 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/filter"
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/filter"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 var noop = martian.Noop("url.Filter")

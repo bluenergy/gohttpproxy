@@ -22,10 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
 
-	_ "github.com/cnmade/martian/v3/header"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
 )
 
 func TestIntegration(t *testing.T) {

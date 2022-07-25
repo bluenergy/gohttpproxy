@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/verify"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/verify"
 )
 
 func init() {

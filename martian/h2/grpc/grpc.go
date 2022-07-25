@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"sync/atomic"
 
-	"github.com/cnmade/martian/v3/h2"
+	"github.com/gohttpproxy/gohttpproxy/martian/h2"
 	"github.com/golang/snappy"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/hpack"

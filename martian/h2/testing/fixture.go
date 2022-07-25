@@ -26,13 +26,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/h2"
-	"github.com/cnmade/martian/v3/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/h2"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	tspb "github.com/cnmade/martian/v3/h2/testservice"
+	tspb "github.com/gohttpproxy/gohttpproxy/martian/h2/testservice"
 )
 
 var (

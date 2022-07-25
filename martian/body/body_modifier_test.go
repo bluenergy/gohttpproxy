@@ -25,9 +25,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cnmade/martian/v3/messageview"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/messageview"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestBodyModifier(t *testing.T) {

@@ -32,8 +32,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cnmade/martian/v3/h2"
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/h2"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // MaxSerialNumber is the upper boundary that is used to create unique serial

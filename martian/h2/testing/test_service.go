@@ -18,7 +18,7 @@ import (
 	"context"
 	"io"
 
-	tspb "github.com/cnmade/martian/v3/h2/testservice"
+	tspb "github.com/gohttpproxy/gohttpproxy/martian/h2/testservice"
 )
 
 // Server is a testing gRPC server.

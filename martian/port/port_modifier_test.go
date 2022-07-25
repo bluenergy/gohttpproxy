@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 func TestPortModifierOnPort(t *testing.T) {

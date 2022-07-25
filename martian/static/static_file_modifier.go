@@ -33,8 +33,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 // Modifier is a martian.RequestResponseModifier that routes reqeusts to rootPath

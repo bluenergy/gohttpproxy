@@ -18,7 +18,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // Modifier implements the Martian modifier interface so that marbl logs

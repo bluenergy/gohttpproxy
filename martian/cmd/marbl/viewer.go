@@ -30,7 +30,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/cnmade/martian/v3/marbl"
+	"github.com/gohttpproxy/gohttpproxy/martian/marbl"
 )
 
 var (

@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 )
 
 // Conn wraps a net.Conn and simulates connection latency and bandwidth

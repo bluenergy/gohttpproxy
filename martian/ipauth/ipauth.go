@@ -19,8 +19,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/auth"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/auth"
 )
 
 var noop = martian.Noop("ipauth.Modifier")

@@ -19,7 +19,7 @@ package verify
 import (
 	"net/http"
 
-	"github.com/cnmade/martian/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian"
 )
 
 // RequestVerifier is a RequestModifier that maintains a verification state.

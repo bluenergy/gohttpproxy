@@ -28,8 +28,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
 )
 
 func init() {

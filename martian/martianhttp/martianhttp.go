@@ -22,10 +22,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/log"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/verify"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/verify"
 )
 
 var noop = martian.Noop("martianhttp.Modifier")

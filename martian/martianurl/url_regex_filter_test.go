@@ -19,10 +19,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
-	_ "github.com/cnmade/martian/v3/header"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestRegexFilterModifyRequest(t *testing.T) {

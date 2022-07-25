@@ -17,8 +17,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestModifyRequest(t *testing.T) {

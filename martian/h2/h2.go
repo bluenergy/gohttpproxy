@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"golang.org/x/net/http2"
 )
 

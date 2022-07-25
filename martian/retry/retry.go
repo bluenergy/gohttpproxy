@@ -3,8 +3,8 @@ package retry // import "v2ray.com/core/common/retry"
 //go:generate errorgen
 
 import (
-	"github.com/cnmade/martian/v3/log"
 	"github.com/go-errors/errors"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"runtime/debug"
 	"time"
 )

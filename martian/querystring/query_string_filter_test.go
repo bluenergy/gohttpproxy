@@ -20,14 +20,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
-	"github.com/cnmade/martian/v3/verify"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/verify"
 
 	// Import to register header.Modifier with JSON parser.
-	_ "github.com/cnmade/martian/v3/header"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
 )
 
 func TestNoModifiers(t *testing.T) {

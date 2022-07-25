@@ -20,12 +20,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cnmade/martian/v3/martiantest"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/martiantest"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 
 	// Import to register header.Modifier with JSON parser.
-	_ "github.com/cnmade/martian/v3/header"
+	_ "github.com/gohttpproxy/gohttpproxy/martian/header"
 )
 
 func TestPriorityGroupModifyRequest(t *testing.T) {

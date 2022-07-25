@@ -19,10 +19,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cnmade/martian/v3/fifo"
-	"github.com/cnmade/martian/v3/parse"
-	"github.com/cnmade/martian/v3/port"
-	"github.com/cnmade/martian/v3/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/fifo"
+	"github.com/gohttpproxy/gohttpproxy/martian/parse"
+	"github.com/gohttpproxy/gohttpproxy/martian/port"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 )
 
 func TestStashRequest(t *testing.T) {
