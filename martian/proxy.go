@@ -19,7 +19,12 @@ import (
 	"bytes"
 	"crypto/tls"
 	"errors"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 	"github.com/gohttpproxy/gohttpproxy/martian/retry"
+	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 	"github.com/panjf2000/ants/v2"
 	"io"
 	"net"
@@ -31,12 +36,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/gohttpproxy/gohttpproxy/martian/log"
-	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
-	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
-	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
-	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 )
 
 const MaxRetries = 25
@@ -62,27 +61,20 @@ func (c *IdleTimeoutConn) GetTsRenew() int64 {
 }
 
 func (c *IdleTimeoutConn) CleanConnJob() {
-	tk := time.NewTicker(2 * time.Second)
 	go func() {
 		for {
-			select {
-			case <-tk.C:
-				if c == nil {
-					log.Infof(" 链接端口，清理程序结束")
-					tk.Stop()
-					tk = nil
-					return
-				}
-				if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
-					log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
-					tk.Stop()
-					tk = nil
-					c.Conn.Close()
-					c.Conn = nil
-					c = nil
-					return
-				}
+			if c == nil {
+				log.Infof(" 清理程序结束")
+				break
 			}
+			if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
+				log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
+				c.Conn.Close()
+				c.Conn = nil
+				c = nil
+				break
+			}
+			time.Sleep(2 * time.Second)
 		}
 	}()
 }
