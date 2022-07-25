@@ -5,8 +5,10 @@ import (
 	"flag"
 	"github.com/cnmade/martian/v3"
 	"github.com/cnmade/martian/v3/log"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	rawlog "log"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -54,7 +56,10 @@ func main() {
 	log.Infof(" log level %v", *lv)
 
 	martian.DefaultProxyIdleTimeout = 15 * time.Second
-
+	if martian.AntsPool == nil {
+		martian.AntsPool, _ = ants.NewPool(50000, ants.WithNonblocking(true),
+			ants.WithExpiryDuration(martian.DefaultProxyIdleTimeout), ants.WithLogger(rawlog.New(os.Stdout, "", rawlog.LstdFlags)))
+	}
 	go func() {
 		sugar.Info(http.ListenAndServe("localhost:6062", nil))
 	}()
