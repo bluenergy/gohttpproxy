@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"github.com/cnmade/martian/v3"
-	"github.com/cnmade/martian/v3/log"
+	"github.com/gohttpproxy/gohttpproxy/martian"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
