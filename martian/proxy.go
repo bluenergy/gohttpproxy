@@ -43,7 +43,7 @@ const RetryAfterTime = 15
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 20 * time.Second
+var DefaultProxyIdleTimeout = 45 * time.Second
 
 var AntsPool *ants.Pool
 
