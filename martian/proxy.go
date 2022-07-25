@@ -77,7 +77,9 @@ func (c *IdleTimeoutConn) CleanConnJob() {
 					log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
 					tk.Stop()
 					tk = nil
-					c.Conn.SetDeadline(time.Now())
+					c.Conn.Close()
+					c.Conn = nil
+					c = nil
 					return
 				}
 			}
