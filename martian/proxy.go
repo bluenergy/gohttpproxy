@@ -43,7 +43,7 @@ const RetryAfterTime = 15
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 45 * time.Second
+var DefaultProxyIdleTimeout = 15 * time.Second
 
 var AntsPool *ants.Pool
 
@@ -91,22 +91,21 @@ func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
 }
 
 func (ic *IdleTimeoutConn) UpdateIdleTime() {
-	if true == ic.mt.TryLock() {
-		defer ic.mt.Unlock()
+	ic.mt.Lock()
+	defer ic.mt.Unlock()
 
-		tsNow := time.Now()
-		lastTs := atomic.LoadInt64(&ic.LastTs)
-		if lastTs > tsNow.Unix() {
-			return
-		}
-		//老的时间
-		tsNext := tsNow.Add(2 * time.Second)
-		tsRenew := tsNext.Add(DefaultProxyIdleTimeout)
-		atomic.StoreInt64(&ic.LastTs, tsNext.Unix())
-		atomic.StoreInt64(&ic.TsRenew, tsRenew.Unix())
-
-		log.Infof("获取到锁，且应该更新，oldTs: %+v, 更新超时时间: %+v, 超时时间: %+v", ic.LastTs, tsNext, tsRenew)
+	tsNow := time.Now()
+	lastTs := atomic.LoadInt64(&ic.LastTs)
+	if lastTs > tsNow.Unix() {
+		return
 	}
+	//老的时间
+	tsNext := tsNow.Add(2 * time.Second)
+	tsRenew := tsNext.Add(DefaultProxyIdleTimeout)
+	atomic.StoreInt64(&ic.LastTs, tsNext.Unix())
+	atomic.StoreInt64(&ic.TsRenew, tsRenew.Unix())
+
+	log.Infof("获取到锁，且应该更新，oldTs: %+v, 更新超时时间: %+v, 超时时间: %+v", ic.LastTs, tsNext, tsRenew)
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
@@ -308,9 +307,9 @@ func (p *Proxy) Serve(l net.Listener) error {
 			tconn.SetKeepAlivePeriod(3 * time.Minute)
 		}*/
 
-		_ = AntsPool.Submit(func() {
+		go func() {
 			p.handleLoop(conn)
-		})
+		}()
 	}
 }
 
@@ -352,14 +351,14 @@ func (p *Proxy) readRequest(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) 
 	var req *http.Request
 	reqc := make(chan *http.Request, 1)
 	errc := make(chan error, 1)
-	_ = AntsPool.Submit(func() {
+	go func() {
 		r, err := http.ReadRequest(brw.Reader)
 		if err != nil {
 			errc <- err
 			return
 		}
 		reqc <- r
-	})
+	}()
 	select {
 	case err := <-errc:
 		if isCloseable(err) {
@@ -521,8 +520,8 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	}
 
 	donec := make(chan bool, 2)
-	_ = ants.Submit(func() { copySync(idleCbw, brw, donec) })
-	_ = ants.Submit(func() { copySync(brw, idleCbr, donec) })
+	go copySync(idleCbw, brw, donec)
+	go copySync(brw, idleCbr, donec)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	<-donec
