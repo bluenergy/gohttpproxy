@@ -43,7 +43,7 @@ const RetryAfterTime = 15
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 16 * time.Second
+var DefaultProxyIdleTimeout = 45 * time.Second
 
 var AntsPool *ants.Pool
 
@@ -69,8 +69,7 @@ func (c *IdleTimeoutConn) CleanConnJob() {
 			}
 			if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
 				log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
-				c.Conn.SetWriteDeadline(time.Now())
-				c.Conn.SetReadDeadline(time.Now())
+				c.Conn.Close()
 				break
 			}
 			time.Sleep(2 * time.Second)
@@ -79,7 +78,7 @@ func (c *IdleTimeoutConn) CleanConnJob() {
 }
 
 func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
-	defer AntsPool.Submit(ic.UpdateIdleTime)
+	go ic.UpdateIdleTime()
 	return ic.Conn.Read(buf)
 }
 
@@ -93,7 +92,7 @@ func (ic *IdleTimeoutConn) UpdateIdleTime() {
 			return
 		}
 		//老的时间
-		tsNext := tsNow.Add(1 * time.Second)
+		tsNext := tsNow.Add(2 * time.Second)
 		tsRenew := tsNext.Add(DefaultProxyIdleTimeout)
 		atomic.StoreInt64(&ic.LastTs, tsNext.Unix())
 		atomic.StoreInt64(&ic.TsRenew, tsRenew.Unix())
@@ -103,7 +102,7 @@ func (ic *IdleTimeoutConn) UpdateIdleTime() {
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
-	defer AntsPool.Submit(ic.UpdateIdleTime)
+	go ic.UpdateIdleTime()
 	return ic.Conn.Write(buf)
 }
 
