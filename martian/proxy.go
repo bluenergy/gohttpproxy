@@ -74,8 +74,6 @@ func (c *IdleTimeoutConn) CleanConnJob() {
 
 				time.Sleep(1 * time.Second)
 				c.Conn.Close()
-				c.Conn = nil
-				c = nil
 				break
 			}
 			time.Sleep(2 * time.Second)
