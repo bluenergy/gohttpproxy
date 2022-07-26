@@ -69,7 +69,8 @@ func (c *IdleTimeoutConn) CleanConnJob() {
 			}
 			if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
 				log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
-				c.Conn.Close()
+				c.Conn.SetWriteDeadline(time.Now().Add(-1 * time.Second))
+				c.Conn.SetReadDeadline(time.Now().Add(-1 * time.Second))
 				break
 			}
 			time.Sleep(2 * time.Second)
