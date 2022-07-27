@@ -32,6 +32,7 @@ import (
 	"net/url"
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -40,8 +41,86 @@ const RetryAfterTime = 15
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
+var DefaultProxyIdleTimeout = 45 * time.Second
 
 //增加idle conn
+
+type IdleTimeoutConn struct {
+	mt      sync.Mutex
+	LastTs  int64
+	TsRenew int64
+	Conn    net.Conn
+}
+
+func NewIdleTimeoutConn(conn net.Conn) *IdleTimeoutConn {
+	c := &IdleTimeoutConn{
+		Conn: conn,
+	}
+	go c.CleanConnJob()
+	return c
+}
+func (c *IdleTimeoutConn) GetTsRenew() int64 {
+	return atomic.LoadInt64(&c.TsRenew)
+}
+
+func (c *IdleTimeoutConn) CleanConnJob() {
+	go func() {
+		for {
+			if c == nil {
+				log.Infof(" 清理程序结束")
+				break
+			}
+			if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
+				log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
+				if c.Conn != nil {
+					c.Conn.SetWriteDeadline(time.Now().Add(-1 * time.Second))
+					c.Conn.SetReadDeadline(time.Now().Add(-1 * time.Second))
+
+					time.Sleep(1 * time.Second)
+					if c.Conn != nil {
+						c.Conn.Close()
+					}
+				}
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+}
+
+func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
+	go ic.UpdateIdleTime()
+	return ic.Conn.Read(buf)
+}
+
+func (ic *IdleTimeoutConn) UpdateIdleTime() {
+	ic.mt.Lock()
+	defer ic.mt.Unlock()
+
+	tsNow := time.Now()
+	lastTs := atomic.LoadInt64(&ic.LastTs)
+	if lastTs > tsNow.Unix() {
+		return
+	}
+	//老的时间
+	tsNext := tsNow.Add(2 * time.Second)
+	tsRenew := tsNext.Add(DefaultProxyIdleTimeout)
+	atomic.StoreInt64(&ic.LastTs, tsNext.Unix())
+	atomic.StoreInt64(&ic.TsRenew, tsRenew.Unix())
+
+	log.Infof("获取到锁，且应该更新，oldTs: %+v, 更新超时时间: %+v, 超时时间: %+v", ic.LastTs, tsNext, tsRenew)
+}
+
+func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
+	go ic.UpdateIdleTime()
+	return ic.Conn.Write(buf)
+}
+
+func (c *IdleTimeoutConn) Close() {
+	if c.Conn != nil {
+		c.Conn.Close()
+	}
+}
 
 func isCloseable(err error) bool {
 	if neterr, ok := err.(net.Error); ok && neterr.Timeout() {
@@ -73,7 +152,6 @@ type Proxy struct {
 
 // NewProxy returns a new HTTP proxy.
 func NewProxy() *Proxy {
-
 	proxy := &Proxy{
 		roundTripper: &http.Transport{
 			// TODO(adamtanner): This forces the http.Transport to not upgrade requests
@@ -423,9 +501,11 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		log.Errorf("martian: got error while flushing response back to client: %v", err)
 	}
 
-	cbw := bufio.NewWriter(cconn)
-	cbr := bufio.NewReader(cconn)
+	//cbw := bufio.NewWriter(cconn)
+	//cbr := bufio.NewReader(cconn)
+	idleCbw := NewIdleTimeoutConn(cconn)
 
+	idleCbr := NewIdleTimeoutConn(cconn)
 	//defer idleCbw.Flush()
 
 	copySync := func(w io.Writer, r io.Reader, donec chan<- bool) {
@@ -440,16 +520,14 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	}
 
 	donec := make(chan bool, 2)
-	go copySync(cbw, brw, donec)
-	go copySync(brw, cbr, donec)
+	go copySync(idleCbw, brw, donec)
+	go copySync(brw, idleCbr, donec)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	<-donec
-	<-donec
-	if donec != nil {
-		close(donec)
-		donec = nil
-	}
+	idleCbr.Close()
+	idleCbw.Close()
+
 	log.Debugf("martian: closed CONNECT tunnel")
 	if cconn != nil {
 		defer cconn.Close()
