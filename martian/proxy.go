@@ -17,6 +17,7 @@ package martian
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
@@ -25,6 +26,7 @@ import (
 	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
 	"github.com/gohttpproxy/gohttpproxy/martian/retry"
 	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
+	"github.com/gohttpproxy/gohttpproxy/signal"
 	"io"
 	"net"
 	"net/http"
@@ -32,7 +34,6 @@ import (
 	"net/url"
 	"regexp"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -46,46 +47,17 @@ var DefaultProxyIdleTimeout = 45 * time.Second
 //增加idle conn
 
 type IdleTimeoutConn struct {
-	mt      sync.Mutex
-	LastTs  int64
-	TsRenew int64
-	Conn    net.Conn
+	mt    sync.Mutex
+	timer signal.ActivityUpdater
+	Conn  net.Conn
 }
 
-func NewIdleTimeoutConn(conn net.Conn) *IdleTimeoutConn {
+func NewIdleTimeoutConn(conn net.Conn, timer signal.ActivityUpdater) *IdleTimeoutConn {
 	c := &IdleTimeoutConn{
-		Conn: conn,
+		Conn:  conn,
+		timer: timer,
 	}
-	go c.CleanConnJob()
 	return c
-}
-func (c *IdleTimeoutConn) GetTsRenew() int64 {
-	return atomic.LoadInt64(&c.TsRenew)
-}
-
-func (c *IdleTimeoutConn) CleanConnJob() {
-	go func() {
-		for {
-			if c == nil {
-				log.Infof(" 清理程序结束")
-				break
-			}
-			if c.GetTsRenew() > 0 && c.GetTsRenew() < time.Now().Unix() {
-				log.Infof("长时间没有读写，自动关闭链接: %d", c.GetTsRenew())
-				if c.Conn != nil {
-					c.Conn.SetWriteDeadline(time.Now().Add(-1 * time.Second))
-					c.Conn.SetReadDeadline(time.Now().Add(-1 * time.Second))
-
-					time.Sleep(1 * time.Second)
-					if c.Conn != nil {
-						c.Conn.Close()
-					}
-				}
-				break
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
 }
 
 func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
@@ -96,19 +68,8 @@ func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
 func (ic *IdleTimeoutConn) UpdateIdleTime() {
 	ic.mt.Lock()
 	defer ic.mt.Unlock()
-
-	tsNow := time.Now()
-	lastTs := atomic.LoadInt64(&ic.LastTs)
-	if lastTs > tsNow.Unix() {
-		return
-	}
-	//老的时间
-	tsNext := tsNow.Add(2 * time.Second)
-	tsRenew := tsNext.Add(DefaultProxyIdleTimeout)
-	atomic.StoreInt64(&ic.LastTs, tsNext.Unix())
-	atomic.StoreInt64(&ic.TsRenew, tsRenew.Unix())
-
-	log.Infof("获取到锁，且应该更新，oldTs: %+v, 更新超时时间: %+v, 超时时间: %+v", ic.LastTs, tsNext, tsRenew)
+	ic.timer.Update()
+	log.Infof("更新超时时间")
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
@@ -501,11 +462,17 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		log.Errorf("martian: got error while flushing response back to client: %v", err)
 	}
 
+	donec := make(chan bool, 3)
 	//cbw := bufio.NewWriter(cconn)
 	//cbr := bufio.NewReader(cconn)
-	idleCbw := NewIdleTimeoutConn(cconn)
+	connCtx, cancel := context.WithCancel(context.Background())
+	timer := signal.CancelAfterInactivity(connCtx, func() {
+		cancel()
+		donec <- true
+	}, DefaultProxyIdleTimeout)
+	idleCbw := NewIdleTimeoutConn(cconn, timer)
 
-	idleCbr := NewIdleTimeoutConn(cconn)
+	idleCbr := NewIdleTimeoutConn(cconn, timer)
 	//defer idleCbw.Flush()
 
 	copySync := func(w io.Writer, r io.Reader, donec chan<- bool) {
@@ -519,7 +486,6 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		}
 	}
 
-	donec := make(chan bool, 2)
 	go copySync(idleCbw, brw, donec)
 	go copySync(brw, idleCbr, donec)
 
