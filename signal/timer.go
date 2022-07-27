@@ -2,7 +2,7 @@ package signal
 
 import (
 	"context"
-	"github.com/gohttpproxy/gohttpproxy/task"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"sync"
 	"time"
 )
@@ -13,9 +13,9 @@ type ActivityUpdater interface {
 
 type ActivityTimer struct {
 	sync.RWMutex
-	updated   chan struct{}
-	checkTask *task.Periodic
-	onTimeout func()
+	updated     chan struct{}
+	onTimeout   func()
+	timerClosed bool
 }
 
 func (t *ActivityTimer) Update() {
@@ -25,26 +25,22 @@ func (t *ActivityTimer) Update() {
 	}
 }
 
-func (t *ActivityTimer) check() error {
+func (t *ActivityTimer) check() {
 	select {
 	case <-t.updated:
 	default:
 		t.finish()
 	}
-	return nil
 }
 
 func (t *ActivityTimer) finish() {
 	t.Lock()
 	defer t.Unlock()
 
+	t.timerClosed = true
 	if t.onTimeout != nil {
 		t.onTimeout()
 		t.onTimeout = nil
-	}
-	if t.checkTask != nil {
-		t.checkTask.Close()
-		t.checkTask = nil
 	}
 }
 
@@ -54,20 +50,18 @@ func (t *ActivityTimer) SetTimeout(timeout time.Duration) {
 		return
 	}
 
-	checkTask := &task.Periodic{
-		Interval: timeout,
-		Execute:  t.check,
-	}
-
-	t.Lock()
-
-	if t.checkTask != nil {
-		t.checkTask.Close()
-	}
-	t.checkTask = checkTask
-	t.Unlock()
+	//过N 秒，执行一次 check
 	t.Update()
-	go checkTask.Start()
+	go func() {
+		for {
+			if t.timerClosed {
+				log.Infof("ActivityTimer finish and close")
+				break
+			}
+			time.Sleep(timeout)
+			t.check()
+		}
+	}()
 }
 
 func CancelAfterInactivity(ctx context.Context, cancel func(), timeout time.Duration) *ActivityTimer {
