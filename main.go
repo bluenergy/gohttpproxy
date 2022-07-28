@@ -69,14 +69,14 @@ func main() {
 		DisableKeepAlives:     true,
 		MaxIdleConns:          0,
 		MaxIdleConnsPerHost:   0,
-		MaxConnsPerHost:       4096,
+		MaxConnsPerHost:       0,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
 	}
 
 	p.SetDial((&net.Dialer{
-		KeepAlive: 15 * time.Second,
+		KeepAlive: 30 * time.Second,
 		Timeout:   3 * time.Second,
 	}).Dial)
 	p.SetRoundTripper(tr)
