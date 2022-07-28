@@ -39,6 +39,7 @@ import (
 
 const MaxRetries = 25
 const RetryAfterTime = 15
+const MaxRetryIntervalTime = 789
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
@@ -682,7 +683,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 		var conn net.Conn
 		var err error
 
-		if err := retry.Timed(MaxRetries, RetryAfterTime).On(func() error {
+		if err := retry.DoubleTimed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 
 			conn, err = p.dial("tcp", p.proxyURL.Host)
 			if err != nil {
@@ -713,8 +714,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	//conn, err := p.dial("tcp", req.URL.Host)
 	var conn net.Conn
 	var err error
-	if err := retry.Timed(MaxRetries, RetryAfterTime).On(func() error {
-
+	if err := retry.DoubleTimed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 		conn, err = p.dial("tcp", req.URL.Host)
 		if err != nil {
 			return err

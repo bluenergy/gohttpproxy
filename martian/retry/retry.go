@@ -5,7 +5,6 @@ package retry // import "v2ray.com/core/common/retry"
 import (
 	"github.com/go-errors/errors"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
-	"runtime/debug"
 	"time"
 )
 
@@ -27,9 +26,8 @@ func (r *retryer) On(method func() error) error {
 	for attempt < r.totalAttempt {
 		err := method()
 		if err == nil {
-
 			if attempt > 0 {
-				log.Infof(" Exec success after  %d times retry.Timed, %s", attempt, debug.Stack())
+				log.Infof(" Exec success after  %d times retry.DoubleTimed", attempt)
 			}
 			return nil
 		}
@@ -53,7 +51,23 @@ func Timed(attempts int, delay uint32) Strategy {
 		},
 	}
 }
-
+func DoubleTimed(attempts int, MaxDelay uint32) Strategy {
+	nextDelay := uint32(0)
+	nextAtt := uint32(1)
+	return &retryer{
+		totalAttempt: attempts,
+		nextDelay: func() uint32 {
+			r := nextDelay
+			if r > MaxDelay {
+				r = MaxDelay
+			} else {
+				nextDelay += 97 + nextAtt*97
+				nextAtt++
+			}
+			return r
+		},
+	}
+}
 func ExponentialBackoff(attempts int, delay uint32) Strategy {
 	nextDelay := uint32(0)
 	return &retryer{
