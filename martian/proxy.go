@@ -70,7 +70,6 @@ func (ic *IdleTimeoutConn) UpdateIdleTime() {
 	ic.mt.Lock()
 	defer ic.mt.Unlock()
 	ic.timer.Update()
-	log.Infof("更新超时时间")
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
