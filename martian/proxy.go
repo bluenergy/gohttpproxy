@@ -274,12 +274,12 @@ func (p *Proxy) Serve(l net.Listener) error {
 		}*/
 
 		go func() {
-			p.handleLoop(conn)
+			p.HandleLoop(conn)
 		}()
 	}
 }
 
-func (p *Proxy) handleLoop(conn net.Conn) {
+func (p *Proxy) HandleLoop(conn net.Conn) {
 	p.connsMu.Lock()
 	p.conns.Add(1)
 	p.connsMu.Unlock()
