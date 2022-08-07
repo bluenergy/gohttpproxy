@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	level          = flag.Int("v", 0, "log level")
-	DefaultBufSize = 131072
+	level               = flag.Int("v", 0, "log level")
+	DefaultReadBufSize  = 8192
+	DefaultWriteBufSize = 131072
 )
 
 // Init runs common initialization code for a martian proxy.

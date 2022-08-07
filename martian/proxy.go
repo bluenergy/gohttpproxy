@@ -288,7 +288,7 @@ func (p *Proxy) HandleLoop(conn net.Conn) {
 		return
 	}
 
-	brw := bufio.NewReadWriter(bufio.NewReaderSize(conn, DefaultBufSize), bufio.NewWriterSize(conn, DefaultBufSize))
+	brw := bufio.NewReadWriter(bufio.NewReaderSize(conn, DefaultReadBufSize), bufio.NewWriterSize(conn, DefaultWriteBufSize))
 
 	s, err := newSession(conn, brw)
 	if err != nil {
@@ -694,8 +694,8 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 			return nil, nil, err
 		}
 
-		pbw := bufio.NewWriterSize(conn, DefaultBufSize)
-		pbr := bufio.NewReaderSize(conn, DefaultBufSize)
+		pbw := bufio.NewWriterSize(conn, DefaultWriteBufSize)
+		pbr := bufio.NewReaderSize(conn, DefaultReadBufSize)
 
 		req.Write(pbw)
 		pbw.Flush()
