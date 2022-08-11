@@ -67,9 +67,10 @@ func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
 }
 
 func (ic *IdleTimeoutConn) UpdateIdleTime() {
-	ic.mt.Lock()
-	defer ic.mt.Unlock()
-	ic.timer.Update()
+	if ic.mt.TryLock() {
+		defer ic.mt.Unlock()
+		ic.timer.Update()
+	}
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
