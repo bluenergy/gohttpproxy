@@ -37,13 +37,13 @@ import (
 	"time"
 )
 
-const MaxRetries = 25
+const MaxRetries = 7
 const RetryAfterTime = 15
 const MaxRetryIntervalTime = 789
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 120 * time.Second
+var DefaultProxyIdleTimeout = 50 * time.Second
 
 //增加idle conn
 
