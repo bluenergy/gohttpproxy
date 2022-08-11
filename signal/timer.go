@@ -16,12 +16,13 @@ type ActivityTimer struct {
 	updated     chan struct{}
 	onTimeout   func()
 	timerClosed bool
+	updateLock  sync.Mutex
 }
 
 func (t *ActivityTimer) Update() {
-	select {
-	case t.updated <- struct{}{}:
-	default:
+	if t.updateLock.TryLock() {
+		defer t.updateLock.Unlock()
+		t.updated <- struct{}{}
 	}
 }
 
