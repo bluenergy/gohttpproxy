@@ -466,11 +466,13 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	//cbw := bufio.NewWriter(cconn)
 	//cbr := bufio.NewReader(cconn)
 	connCtx, cancel := context.WithCancel(context.Background())
-	timer := signal.CancelAfterInactivity(connCtx, func() {
+	cancelFunc := func() {
 		log.Infof("链接已经超时，准备关闭链接")
 		cancel()
-		donec <- true
-	}, DefaultProxyIdleTimeout)
+		cconn.Close()
+		conn.Close()
+	}
+	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 	idleCbw := NewIdleTimeoutConn(cconn, timer)
 
 	idleCbr := NewIdleTimeoutConn(cconn, timer)
