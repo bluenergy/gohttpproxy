@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -14,24 +13,23 @@ type ActivityUpdater interface {
 
 type ActivityTimer struct {
 	sync.RWMutex
-	updated      atomic.Int64
-	timeInterval time.Duration
-	onTimeout    func()
-	timerClosed  bool
-	updateLock   sync.Mutex
+	updated     chan struct{}
+	onTimeout   func()
+	timerClosed bool
+	updateLock  sync.Mutex
 }
 
 func (t *ActivityTimer) Update() {
 	if t.updateLock.TryLock() {
 		defer t.updateLock.Unlock()
-		t.updated.Store(time.Now().Add(t.timeInterval).UnixMilli())
-
+		t.updated <- struct{}{}
 	}
 }
 
 func (t *ActivityTimer) check() {
-	tn := time.Now().UnixMilli()
-	if tn > t.updated.Load() {
+	select {
+	case <-t.updated:
+	default:
 		t.finish()
 	}
 }
@@ -69,8 +67,8 @@ func (t *ActivityTimer) SetTimeout(timeout time.Duration) {
 
 func CancelAfterInactivity(ctx context.Context, cancel func(), timeout time.Duration) *ActivityTimer {
 	timer := &ActivityTimer{
-		onTimeout:    cancel,
-		timeInterval: timeout,
+		updated:   make(chan struct{}, 1),
+		onTimeout: cancel,
 	}
 	timer.SetTimeout(timeout)
 	return timer
