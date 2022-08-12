@@ -26,7 +26,6 @@ func (t *ActivityTimer) Update() {
 	case <-time.After(1 * time.Second):
 		log.Infof("等待1s还没有获取锁，本次跳过更新")
 		break
-	default:
 
 	}
 }
