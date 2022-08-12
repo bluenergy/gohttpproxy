@@ -24,7 +24,7 @@ func (t *ActivityTimer) Update() {
 	case t.updated <- struct{}{}:
 		break
 	case <-time.After(1 * time.Second):
-		log.Infof("等待1s还没有获取锁，本次跳过更新")
+		//log.Infof("等待1s还没有获取锁，本次跳过更新")
 		break
 
 	}
