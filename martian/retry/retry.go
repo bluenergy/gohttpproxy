@@ -61,7 +61,7 @@ func DoubleTimed(attempts int, MaxDelay uint32) Strategy {
 			if r > MaxDelay {
 				r = MaxDelay
 			} else {
-				nextDelay += 97 + nextAtt*97
+				nextDelay += 17 + nextAtt*17
 				nextAtt++
 			}
 			return r
