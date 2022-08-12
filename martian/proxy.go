@@ -472,6 +472,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		cancel()
 		cconn.Close()
 		conn.Close()
+		donec <- true
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 	idleCbw := NewIdleTimeoutConn(cconn, timer)
@@ -495,6 +496,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	<-donec
+	log.Debugf("donec chan通道关闭，准备关闭链接")
 	idleCbr.Close()
 	idleCbw.Close()
 
