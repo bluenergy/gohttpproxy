@@ -76,7 +76,7 @@ func main() {
 	}
 
 	p.SetDial((&net.Dialer{
-		KeepAlive: 120 * time.Second,
+		KeepAlive: 15 * time.Second,
 		Timeout:   3 * time.Second,
 	}).Dial)
 	p.SetRoundTripper(tr)
