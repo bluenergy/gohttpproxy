@@ -39,7 +39,7 @@ import (
 
 const MaxRetries = 7
 const RetryAfterTime = 15
-const MaxRetryIntervalTime = 789
+const MaxRetryIntervalTime = 100
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
@@ -507,7 +507,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	if conn != nil {
 		defer conn.Close()
 	}
-	
+
 	log.Infof("所有链接已关闭")
 
 	return errClose
