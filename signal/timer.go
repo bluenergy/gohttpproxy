@@ -20,9 +20,14 @@ type ActivityTimer struct {
 }
 
 func (t *ActivityTimer) Update() {
-	if t.updateLock.TryLock() {
-		defer t.updateLock.Unlock()
-		t.updated <- struct{}{}
+	select {
+	case t.updated <- struct{}{}:
+		break
+	case <-time.After(1 * time.Second):
+		log.Infof("等待1s还没有获取锁，本次跳过更新")
+		break
+	default:
+
 	}
 }
 
