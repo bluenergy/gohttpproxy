@@ -507,6 +507,10 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	if conn != nil {
 		defer conn.Close()
 	}
+	
+	close(donec)
+	donec = nil
+
 	log.Infof("所有链接已关闭")
 
 	return errClose
