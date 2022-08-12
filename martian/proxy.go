@@ -43,7 +43,7 @@ const MaxRetryIntervalTime = 789
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 50 * time.Second
+var DefaultProxyIdleTimeout = 30 * time.Second
 
 //增加idle conn
 
