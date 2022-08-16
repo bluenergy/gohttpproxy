@@ -62,13 +62,13 @@ func main() {
 	defer p.Close()
 
 	tr := &http.Transport{
-		IdleConnTimeout:       30 * time.Second,
+		IdleConnTimeout:       15 * time.Second,
 		ResponseHeaderTimeout: 3 * time.Second,
 		TLSHandshakeTimeout:   3 * time.Second,
 		ExpectContinueTimeout: 3 * time.Second,
 		DisableKeepAlives:     false,
-		MaxIdleConns:          20,
-		MaxIdleConnsPerHost:   6,
+		MaxIdleConns:          12,
+		MaxIdleConnsPerHost:   2,
 		MaxConnsPerHost:       0,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
