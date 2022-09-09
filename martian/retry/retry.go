@@ -53,7 +53,6 @@ func Timed(attempts int, delay uint32) Strategy {
 }
 func DoubleTimed(attempts int, MaxDelay uint32) Strategy {
 	nextDelay := uint32(0)
-	nextAtt := uint32(1)
 	return &retryer{
 		totalAttempt: attempts,
 		nextDelay: func() uint32 {
@@ -61,8 +60,7 @@ func DoubleTimed(attempts int, MaxDelay uint32) Strategy {
 			if r > MaxDelay {
 				r = MaxDelay
 			} else {
-				nextDelay += 17 + nextAtt*17
-				nextAtt++
+				nextDelay += 17
 			}
 			return r
 		},
