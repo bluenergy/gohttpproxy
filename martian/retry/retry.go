@@ -27,7 +27,7 @@ func (r *retryer) On(method func() error) error {
 		err := method()
 		if err == nil {
 			if attempt > 0 {
-				log.Infof(" Exec success after  %d times retry.DoubleTimed", attempt)
+				log.Infof(" Exec success after  %d times retry.Timed", attempt)
 			}
 			return nil
 		}
