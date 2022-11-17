@@ -39,7 +39,7 @@ import (
 
 const MaxRetries = 7
 const RetryAfterTime = 15
-const MaxRetryIntervalTime = 75
+const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
