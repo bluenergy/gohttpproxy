@@ -1,0 +1,12 @@
+network := "192.168.5.0/24"
+	clientips := []string{
+		"192.168.5.1",
+		"192.168.6.0",
+	}
+	_, subnet, _ := net.ParseCIDR(network)
+	for _, clientip := range clientips {
+		ip := net.ParseIP(clientip)
+		if subnet.Contains(ip) {
+			fmt.Println("IP in subnet", clientip)
+		}
+	}

@@ -33,6 +33,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -680,13 +681,35 @@ func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, erro
 }
 
 func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
-	if p.proxyURL != nil {
+	//TODO check if the host in ch n route
+	cm := "connect@proxy.go"
+
+	var err error
+
+	shouldByPass := false
+
+	addr := req.URL.Host
+	log.Infof(cm+" addr: %v", addr)
+	sh := strings.Split(addr, ":")
+	hostName := sh[0]
+	log.Infof(cm+" host: %v", hostName)
+
+	ip, err := net.LookupIP(hostName)
+	if err == nil {
+		log.Infof(cm+" ip: %v", ip)
+		if inCh86cidr(ip[0]) {
+			shouldByPass = true
+			log.Infof(cm + " In ch86cidr , should by pass")
+		}
+	}
+
+	if p.proxyURL != nil && shouldByPass == false {
+
 		log.Debugf("martian: CONNECT with downstream proxy: %s", p.proxyURL.Host)
 
 		//conn, err := p.dial("tcp", p.proxyURL.Host)
 
 		var conn net.Conn
-		var err error
 
 		if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 
@@ -718,7 +741,6 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 	//conn, err := p.dial("tcp", req.URL.Host)
 	var conn net.Conn
-	var err error
 	if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 		conn, err = p.dial("tcp", req.URL.Host)
 		if err != nil {
@@ -734,4 +756,18 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	//}
 
 	return proxyutil.NewResponse(200, nil, req), conn, nil
+}
+
+func inCh86cidr(ip net.IP) bool {
+
+	for _, network := range Ch86cidr {
+
+		_, subnet, _ := net.ParseCIDR(network)
+		if subnet.Contains(ip) {
+			log.Infof("IP: %v in subnet: %v", ip, network)
+			return true
+		}
+	}
+	log.Infof("IP: %v  not in ch86cidr", ip)
+	return false
 }
