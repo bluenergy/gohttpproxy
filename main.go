@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,6 +21,7 @@ var (
 	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
 	lv    = flag.Int("lv", log.Debug, "default log level")
 	h     = flag.Bool("h", false, "help")
+	ds    = flag.String("ds", "http://127.0.0.1:8123", "down stream of the proxy")
 	sugar *zap.SugaredLogger
 )
 
@@ -73,6 +75,14 @@ func main() {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
+	}
+
+	if *ds != "" {
+		u, err := url.Parse(*ds)
+		if err != nil {
+			log.Errorf(err.Error())
+		}
+		p.SetDownstreamProxy(u)
 	}
 
 	p.SetDial((&net.Dialer{
