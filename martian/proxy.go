@@ -27,6 +27,7 @@ import (
 	"github.com/gohttpproxy/gohttpproxy/martian/retry"
 	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 	"github.com/gohttpproxy/gohttpproxy/signal"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"io"
 	"net"
 	"net/http"
@@ -109,12 +110,14 @@ type Proxy struct {
 	connsMu      sync.Mutex // protects conns.Add/Wait from concurrent access
 	closing      chan bool
 
-	reqmod RequestModifier
-	resmod ResponseModifier
+	reqmod   RequestModifier
+	resmod   ResponseModifier
+	lruCache *lru.Cache[string, bool]
 }
 
 // NewProxy returns a new HTTP proxy.
 func NewProxy() *Proxy {
+	lrc, _ := lru.New[string, bool](4096)
 	proxy := &Proxy{
 		roundTripper: &http.Transport{
 			// TODO(adamtanner): This forces the http.Transport to not upgrade requests
@@ -127,10 +130,11 @@ func NewProxy() *Proxy {
 			MaxIdleConnsPerHost:   0,
 			ExpectContinueTimeout: time.Second,
 		},
-		timeout: 0,
-		closing: make(chan bool),
-		reqmod:  noop,
-		resmod:  noop,
+		timeout:  0,
+		closing:  make(chan bool),
+		reqmod:   noop,
+		resmod:   noop,
+		lruCache: lrc,
 	}
 	proxy.SetDial((&net.Dialer{
 		Timeout:   4 * time.Second,
@@ -697,7 +701,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	ip, err := net.LookupIP(hostName)
 	if err == nil {
 		log.Infof(cm+" ip: %v", ip)
-		if inCh86cidr(ip[0]) == true {
+		if p.inCh86cidr(ip[0]) == true {
 			shouldUseDsProxy = false
 			log.Infof(cm + " In ch86cidr , not use ds proxy")
 		} else {
@@ -753,16 +757,23 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	return proxyutil.NewResponse(200, nil, req), conn, nil
 }
 
-func inCh86cidr(ip net.IP) bool {
+func (p *Proxy) inCh86cidr(ip net.IP) bool {
+	if v, ok := p.lruCache.Get(ip.String()); ok == true {
+
+		log.Infof("cache hit, IP: %v in subnet true or false: %+v", ip, v)
+		return v
+	}
 
 	for _, network := range Ch86cidr {
 
 		_, subnet, _ := net.ParseCIDR(network)
 		if subnet.Contains(ip) {
+			p.lruCache.Add(ip.String(), true)
 			log.Infof("IP: %v in subnet: %v", ip, network)
 			return true
 		}
 	}
+	p.lruCache.Add(ip.String(), false)
 	log.Infof("IP: %v  not in ch86cidr", ip)
 	return false
 }

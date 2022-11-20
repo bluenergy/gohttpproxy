@@ -26,6 +26,7 @@ var (
 )
 
 func main() {
+	cm := "main@main.go "
 	atom := zap.NewAtomicLevel()
 
 	// To keep the example deterministic, disable timestamps in the output.
@@ -78,6 +79,8 @@ func main() {
 	}
 
 	if *ds != "" {
+		log.Infof(cm + " ds 不为空，开启下一层代理")
+
 		u, err := url.Parse(*ds)
 		if err != nil {
 			log.Errorf(err.Error())
