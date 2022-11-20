@@ -686,7 +686,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 	var err error
 
-	shouldByPass := false
+	shouldUseDsProxy := true
 
 	addr := req.URL.Host
 	log.Infof(cm+" addr: %v", addr)
@@ -697,29 +697,22 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	ip, err := net.LookupIP(hostName)
 	if err == nil {
 		log.Infof(cm+" ip: %v", ip)
-		if inCh86cidr(ip[0]) {
-			shouldByPass = true
-			log.Infof(cm + " In ch86cidr , should by pass")
+		if inCh86cidr(ip[0]) == true {
+			shouldUseDsProxy = false
+			log.Infof(cm + " In ch86cidr , not use ds proxy")
+		} else {
+			log.Infof(cm + " not in ch86cidr, use ds proxy")
 		}
 	}
 
-	if p.proxyURL != nil && shouldByPass == false {
+	log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
+	if p.proxyURL != nil && shouldUseDsProxy == true {
 
 		log.Debugf("martian: CONNECT with downstream proxy: %s", p.proxyURL.Host)
 
-		//conn, err := p.dial("tcp", p.proxyURL.Host)
+		conn, err := p.dial("tcp", p.proxyURL.Host)
 
-		var conn net.Conn
-
-		if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
-
-			conn, err = p.dial("tcp", p.proxyURL.Host)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}); err != nil {
+		if err != nil {
 			return nil, nil, err
 		}
 
@@ -733,7 +726,9 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-
+		if res.StatusCode == 200 {
+			return proxyutil.NewResponse(200, nil, req), conn, nil
+		}
 		return res, conn, nil
 	}
 

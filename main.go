@@ -21,7 +21,7 @@ var (
 	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
 	lv    = flag.Int("lv", log.Debug, "default log level")
 	h     = flag.Bool("h", false, "help")
-	ds    = flag.String("ds", "http://127.0.0.1:8123", "down stream of the proxy")
+	ds    = flag.String("ds", "", "down stream of the proxy")
 	sugar *zap.SugaredLogger
 )
 
