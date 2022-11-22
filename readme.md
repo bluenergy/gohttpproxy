@@ -27,6 +27,16 @@ Usage of ./gohttpproxy:
 
 ```
 
+## 支持作者
+
+
+Buy me a cup of coffee for $3
+
+买一杯咖啡，请作者只需要$3 美元
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M54KKIF)
+
+
 ## Install
 
 
@@ -44,7 +54,4 @@ CGO_ENABLED=0 go1.14rc1 build -v -a -ldflags ' -s -w  -extldflags "-static"' .
 ```
 136MYemy5QmmBPLBLr1GHZfkES7CsoG4Qh
 ```
-### Alipay donate
-![Scan QRCode donate me via Alipay](https://www.netroby.com/assets/images/alipayme.jpg)
 
-**Scan QRCode donate me via Alipay**
