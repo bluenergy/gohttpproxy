@@ -154,7 +154,7 @@ func (p *Proxy) SetRoundTripper(rt http.RoundTripper) {
 
 	if tr, ok := p.roundTripper.(*http.Transport); ok {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
-		tr.Proxy = http.ProxyURL(p.proxyURL)
+		//	tr.Proxy = http.ProxyURL(p.proxyURL)
 		tr.Dial = p.dial
 	}
 }
@@ -164,9 +164,9 @@ func (p *Proxy) SetRoundTripper(rt http.RoundTripper) {
 func (p *Proxy) SetDownstreamProxy(proxyURL *url.URL) {
 	p.proxyURL = proxyURL
 
-	if tr, ok := p.roundTripper.(*http.Transport); ok {
-		tr.Proxy = http.ProxyURL(p.proxyURL)
-	}
+	//if tr, ok := p.roundTripper.(*http.Transport); ok {
+	//tr.Proxy = http.ProxyURL(p.proxyURL)
+	//}
 }
 
 // SetTimeout sets the request timeout of the proxy.
@@ -676,9 +676,38 @@ type peekedConn struct {
 func (c *peekedConn) Read(buf []byte) (int, error) { return c.r.Read(buf) }
 
 func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, error) {
+	cm := "roundTrip@proxy.go "
 	if ctx.SkippingRoundTrip() {
 		log.Debugf("martian: skipping round trip")
 		return proxyutil.NewResponse(200, nil, req), nil
+	}
+
+	if tr, ok := p.roundTripper.(*http.Transport); ok {
+		//TODO 如果域名不在ch86cidr内，就启用proxy
+		shouldUseDsProxy := true
+
+		addr := req.URL.Host
+		log.Infof(cm+" addr: %v", addr)
+		sh := strings.Split(addr, ":")
+		hostName := sh[0]
+		log.Infof(cm+" host: %v", hostName)
+
+		ip, err := net.LookupIP(hostName)
+		if err == nil {
+			log.Infof(cm+" ip: %v", ip)
+			if p.inCh86cidr(ip[0]) == true {
+				shouldUseDsProxy = false
+				log.Infof(cm + " In ch86cidr , not use ds proxy")
+			} else {
+				log.Infof(cm + " not in ch86cidr, use ds proxy")
+			}
+		}
+
+		log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
+		if p.proxyURL != nil && shouldUseDsProxy == true {
+
+			tr.Proxy = http.ProxyURL(p.proxyURL)
+		}
 	}
 
 	return p.roundTripper.RoundTrip(req)
