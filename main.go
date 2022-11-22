@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	badger "github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v3/options"
 	"github.com/gohttpproxy/gohttpproxy/martian"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"go.uber.org/zap"
@@ -59,7 +60,7 @@ func main() {
 
 	log.Infof(" log level %v", *lv)
 
-	dbo, err := badger.Open(badger.DefaultOptions(*db))
+	dbo, err := badger.Open(badger.DefaultOptions(*db).WithCompression(options.CompressionType(0)))
 	if err != nil {
 		log.Infof(err.Error())
 	}
