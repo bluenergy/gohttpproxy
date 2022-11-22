@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	level               = flag.Int("v", 0, "log level")
+	level               = flag.Int("verbose", 0, "log level")
 	DefaultReadBufSize  = 8192
 	DefaultWriteBufSize = 131072
 )

@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
@@ -27,7 +28,6 @@ import (
 	"github.com/gohttpproxy/gohttpproxy/martian/retry"
 	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 	"github.com/gohttpproxy/gohttpproxy/signal"
-	lru "github.com/hashicorp/golang-lru/v2"
 	"io"
 	"net"
 	"net/http"
@@ -110,14 +110,13 @@ type Proxy struct {
 	connsMu      sync.Mutex // protects conns.Add/Wait from concurrent access
 	closing      chan bool
 
-	reqmod   RequestModifier
-	resmod   ResponseModifier
-	lruCache *lru.Cache[string, bool]
+	reqmod RequestModifier
+	resmod ResponseModifier
+	dbo    *badger.DB
 }
 
 // NewProxy returns a new HTTP proxy.
 func NewProxy() *Proxy {
-	lrc, _ := lru.New[string, bool](4096)
 	proxy := &Proxy{
 		roundTripper: &http.Transport{
 			// TODO(adamtanner): This forces the http.Transport to not upgrade requests
@@ -130,11 +129,10 @@ func NewProxy() *Proxy {
 			MaxIdleConnsPerHost:   0,
 			ExpectContinueTimeout: time.Second,
 		},
-		timeout:  0,
-		closing:  make(chan bool),
-		reqmod:   noop,
-		resmod:   noop,
-		lruCache: lrc,
+		timeout: 0,
+		closing: make(chan bool),
+		reqmod:  noop,
+		resmod:  noop,
 	}
 	proxy.SetDial((&net.Dialer{
 		Timeout:   4 * time.Second,
@@ -788,23 +786,69 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	return proxyutil.NewResponse(200, nil, req), conn, nil
 }
 
-func (p *Proxy) inCh86cidr(ip net.IP) bool {
-	if v, ok := p.lruCache.Get(ip.String()); ok == true {
+func (p *Proxy) getItemValue(item *badger.Item) (val []byte) {
 
-		log.Infof("cache hit, IP: %v in subnet true or false: %+v", ip, v)
-		return v
+	cm := "getItemValue@proxy.go"
+	var v []byte
+	err := item.Value(func(val []byte) error {
+		v = val
+		return nil
+	})
+	if err != nil {
+
+		log.Errorf(cm+" error: %v", err)
+	}
+	if v == nil {
+		return nil
+	}
+	return v
+}
+func (p *Proxy) inCh86cidr(ip net.IP) bool {
+
+	cm := "inCh86cidr@proxy.go"
+	var resp string
+	err := p.dbo.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(ip.String()))
+		if err != nil {
+			log.Errorf(cm+" error: %v", err)
+			return err
+		}
+		val := p.getItemValue(item)
+		resp = string(val)
+		log.Infof(cm+" resp from cached: %v", resp)
+		return nil
+	})
+
+	if err != nil {
+		log.Errorf(cm+" error: %v, continue check ip if in cidr", err)
+	}
+
+	if resp != "" {
+		return resp == "true"
 	}
 
 	for _, network := range Ch86cidr {
 
 		_, subnet, _ := net.ParseCIDR(network)
 		if subnet.Contains(ip) {
-			p.lruCache.Add(ip.String(), true)
+			p.dbo.Update(func(txn *badger.Txn) error {
+				txn.Set([]byte(ip.String()), []byte("true"))
+				return nil
+			})
 			log.Infof("IP: %v in subnet: %v", ip, network)
 			return true
 		}
 	}
-	p.lruCache.Add(ip.String(), false)
+
+	p.dbo.Update(func(txn *badger.Txn) error {
+		txn.Set([]byte(ip.String()), []byte("false"))
+		return nil
+	})
 	log.Infof("IP: %v  not in ch86cidr", ip)
 	return false
+}
+
+func (p *Proxy) SetDbo(dbo *badger.DB) {
+	p.dbo = dbo
+
 }

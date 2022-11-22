@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	badger "github.com/dgraph-io/badger/v3"
 	"github.com/gohttpproxy/gohttpproxy/martian"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"go.uber.org/zap"
@@ -18,10 +19,12 @@ import (
 )
 
 var (
-	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
-	lv    = flag.Int("lv", log.Debug, "default log level")
-	h     = flag.Bool("h", false, "help")
-	ds    = flag.String("ds", "", "down stream of the proxy")
+	addr = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
+	lv   = flag.Int("lv", log.Debug, "default log level")
+	h    = flag.Bool("h", false, "help")
+	ds   = flag.String("ds", "", "down stream of the proxy")
+	db   = flag.String("db", "./cidr_db", "path to the cache db")
+
 	sugar *zap.SugaredLogger
 )
 
@@ -56,10 +59,18 @@ func main() {
 
 	log.Infof(" log level %v", *lv)
 
+	dbo, err := badger.Open(badger.DefaultOptions(*db))
+	if err != nil {
+		log.Infof(err.Error())
+	}
+	defer dbo.Close()
+
 	go func() {
 		sugar.Info(http.ListenAndServe("localhost:6062", nil))
 	}()
 	p := martian.NewProxy()
+
+	p.SetDbo(dbo)
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
 	defer p.Close()
