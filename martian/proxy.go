@@ -686,6 +686,7 @@ func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, erro
 		//TODO 如果域名不在ch86cidr内，就启用proxy
 		shouldUseDsProxy := true
 
+		log.Infof(cm+" URL: %v", req.URL.String())
 		addr := req.URL.Host
 		log.Infof(cm+" addr: %v", addr)
 		sh := strings.Split(addr, ":")
@@ -721,6 +722,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 	shouldUseDsProxy := true
 
+	log.Infof(cm+" URL: %v", req.URL.String())
 	addr := req.URL.Host
 	log.Infof(cm+" addr: %v", addr)
 	sh := strings.Split(addr, ":")
