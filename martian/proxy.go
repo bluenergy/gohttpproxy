@@ -717,52 +717,55 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	cm := "connect@proxy.go"
 
 	var err error
+	if p.proxyURL != nil {
 
-	shouldUseDsProxy := true
+		shouldUseDsProxy := true
 
-	log.Infof(cm+" URL: %v", req.URL.String())
-	addr := req.URL.Host
-	log.Infof(cm+" addr: %v", addr)
-	sh := strings.Split(addr, ":")
-	hostName := sh[0]
-	log.Infof(cm+" host: %v", hostName)
+		log.Infof(cm+" URL: %v", req.URL.String())
+		addr := req.URL.Host
+		log.Infof(cm+" addr: %v", addr)
+		sh := strings.Split(addr, ":")
+		hostName := sh[0]
+		log.Infof(cm+" host: %v", hostName)
 
-	ip, err := net.LookupIP(hostName)
-	if err == nil {
-		log.Infof(cm+" ip: %v", ip)
-		if p.inCh86cidr(ip[0]) == true {
-			shouldUseDsProxy = false
-			log.Infof(cm + " In ch86cidr , not use ds proxy")
-		} else {
-			log.Infof(cm + " not in ch86cidr, use ds proxy")
-		}
-	}
-
-	log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
-	if p.proxyURL != nil && shouldUseDsProxy == true {
-
-		log.Debugf("martian: CONNECT with downstream proxy: %s", p.proxyURL.Host)
-
-		conn, err := p.dial("tcp", p.proxyURL.Host)
-
-		if err != nil {
-			return nil, nil, err
+		ip, err := net.LookupIP(hostName)
+		if err == nil {
+			log.Infof(cm+" ip: %v", ip)
+			if p.inCh86cidr(ip[0]) == true {
+				shouldUseDsProxy = false
+				log.Infof(cm + " In ch86cidr , not use ds proxy")
+			} else {
+				log.Infof(cm + " not in ch86cidr, use ds proxy")
+			}
 		}
 
-		pbw := bufio.NewWriterSize(conn, DefaultWriteBufSize)
-		pbr := bufio.NewReaderSize(conn, DefaultReadBufSize)
+		log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
 
-		req.Write(pbw)
-		pbw.Flush()
+		if shouldUseDsProxy == true {
 
-		res, err := http.ReadResponse(pbr, req)
-		if err != nil {
-			return nil, nil, err
+			log.Debugf("martian: CONNECT with downstream proxy: %s", p.proxyURL.Host)
+
+			conn, err := p.dial("tcp", p.proxyURL.Host)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			pbw := bufio.NewWriterSize(conn, DefaultWriteBufSize)
+			pbr := bufio.NewReaderSize(conn, DefaultReadBufSize)
+
+			req.Write(pbw)
+			pbw.Flush()
+
+			res, err := http.ReadResponse(pbr, req)
+			if err != nil {
+				return nil, nil, err
+			}
+			if res.StatusCode == 200 {
+				return proxyutil.NewResponse(200, nil, req), conn, nil
+			}
+			return res, conn, nil
 		}
-		if res.StatusCode == 200 {
-			return proxyutil.NewResponse(200, nil, req), conn, nil
-		}
-		return res, conn, nil
 	}
 
 	log.Debugf("martian: CONNECT to host directly: %s", req.URL.Host)

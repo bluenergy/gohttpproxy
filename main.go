@@ -60,18 +60,19 @@ func main() {
 
 	log.Infof(" log level %v", *lv)
 
-	dbo, err := badger.Open(badger.DefaultOptions(*db).WithCompression(options.CompressionType(0)))
-	if err != nil {
-		log.Infof(err.Error())
-	}
-	defer dbo.Close()
-
 	go func() {
 		sugar.Info(http.ListenAndServe("localhost:6062", nil))
 	}()
 	p := martian.NewProxy()
 
-	p.SetDbo(dbo)
+	if *db != "" {
+		dbo, err := badger.Open(badger.DefaultOptions(*db).WithCompression(options.CompressionType(0)))
+		if err != nil {
+			log.Infof(err.Error())
+		}
+		defer dbo.Close()
+		p.SetDbo(dbo)
+	}
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
 	defer p.Close()
