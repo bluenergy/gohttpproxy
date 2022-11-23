@@ -553,6 +553,9 @@ func (p *Proxy) handle(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) error
 		log.Infof("martian: forcing HTTPS inside secure session")
 		req.URL.Scheme = "https"
 	}
+	if req.URL.Port() == "443" {
+		req.URL.Scheme = "https"
+	}
 
 	req.RemoteAddr = conn.RemoteAddr().String()
 	if req.URL.Host == "" {
