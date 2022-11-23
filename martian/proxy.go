@@ -45,12 +45,11 @@ const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 15 * time.Second
+var DefaultProxyIdleTimeout = 45 * time.Second
 
 //增加idle conn
 
 type IdleTimeoutConn struct {
-	mt    sync.Mutex
 	timer signal.ActivityUpdater
 	Conn  net.Conn
 }
@@ -69,10 +68,7 @@ func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
 }
 
 func (ic *IdleTimeoutConn) UpdateIdleTime() {
-	if ic.mt.TryLock() {
-		defer ic.mt.Unlock()
-		ic.timer.Update()
-	}
+	ic.timer.Update()
 }
 
 func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
