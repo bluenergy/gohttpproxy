@@ -553,9 +553,6 @@ func (p *Proxy) handle(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) error
 		log.Infof("martian: forcing HTTPS inside secure session")
 		req.URL.Scheme = "https"
 	}
-	if req.URL.Port() == "443" {
-		req.URL.Scheme = "https"
-	}
 
 	req.RemoteAddr = conn.RemoteAddr().String()
 	if req.URL.Host == "" {
@@ -674,6 +671,7 @@ func (c *peekedConn) Read(buf []byte) (int, error) { return c.r.Read(buf) }
 
 func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, error) {
 	cm := "roundTrip@proxy.go "
+	log.Infof(cm+" req: %+v", req)
 	if ctx.SkippingRoundTrip() {
 		log.Debugf("martian: skipping round trip")
 		return proxyutil.NewResponse(200, nil, req), nil
