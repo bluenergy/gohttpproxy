@@ -471,7 +471,6 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		cancel()
 		cconn.Close()
 		conn.Close()
-		donec <- true
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 	idleCbw := NewIdleTimeoutConn(cconn, timer)
@@ -479,22 +478,22 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	idleCbr := NewIdleTimeoutConn(cconn, timer)
 	//defer idleCbw.Flush()
 
-	copySync := func(w io.Writer, r io.Reader, donec chan<- bool) {
+	copySync := func(w io.Writer, r io.Reader, wg *sync.WaitGroup) {
+		defer wg.Done()
 		if _, err := io.Copy(w, r); err != nil && err != io.EOF {
 			log.Errorf("martian: failed to copy CONNECT tunnel: %v", err)
 		}
 
 		log.Debugf("martian: CONNECT tunnel finished copying")
-		if donec != nil {
-			donec <- true
-		}
 	}
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
 
-	go copySync(idleCbw, brw, donec)
-	go copySync(brw, idleCbr, donec)
+	go copySync(idleCbw, brw, wg)
+	go copySync(brw, idleCbr, wg)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
-	<-donec
+	wg.Wait()
 	log.Debugf("donec chan通道关闭，准备关闭链接")
 	idleCbr.Close()
 	idleCbw.Close()
