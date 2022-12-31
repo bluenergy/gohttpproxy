@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	badger "github.com/dgraph-io/badger/v3"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
