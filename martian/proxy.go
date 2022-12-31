@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"github.com/dgraph-io/badger/v3"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
@@ -513,6 +512,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 }
 
 func (p *Proxy) handle(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) error {
+	cm := "handle@proxy.go"
 	log.Debugf("martian: waiting for request: %v", conn.RemoteAddr())
 
 	req, err := p.readRequest(ctx, conn, brw)
@@ -548,11 +548,13 @@ func (p *Proxy) handle(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) error
 		req.TLS = &cs
 	}
 
-	req.URL.Scheme = "http"
-	if session.IsSecure() {
-		log.Infof("martian: forcing HTTPS inside secure session")
-		req.URL.Scheme = "https"
-	}
+	log.Infof(cm+" URL: %v", req.URL.String())
+
+	/*	req.URL.Scheme = "http"
+		if session.IsSecure() {
+			log.Infof("martian: forcing HTTPS inside secure session")
+			req.URL.Scheme = "https"
+		}*/
 
 	req.RemoteAddr = conn.RemoteAddr().String()
 	if req.URL.Host == "" {
