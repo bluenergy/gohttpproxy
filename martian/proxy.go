@@ -462,7 +462,6 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		log.Errorf("martian: got error while flushing response back to client: %v", err)
 	}
 
-	donec := make(chan bool, 3)
 	//cbw := bufio.NewWriter(cconn)
 	//cbr := bufio.NewReader(cconn)
 	connCtx, cancel := context.WithCancel(context.Background())
@@ -494,7 +493,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	wg.Wait()
-	log.Debugf("donec chan通道关闭，准备关闭链接")
+	log.Debugf("io.Copy 关闭，准备关闭链接")
 	idleCbr.Close()
 	idleCbw.Close()
 
