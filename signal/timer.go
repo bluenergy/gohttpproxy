@@ -22,12 +22,14 @@ type ActivityTimer struct {
 }
 
 func (t *ActivityTimer) Update() {
-	t.updated.Swap(time.Now().Add(t.tTimeout).UnixMilli())
+	if t.updateLock.TryLock() {
+		go t.updated.Swap(time.Now().Add(t.tTimeout).Unix())
+	}
 }
 
 func (t *ActivityTimer) check() {
 	ttn := t.updated.Load()
-	if ttn <= 0 || ttn < time.Now().UnixMilli() {
+	if ttn <= 0 || ttn < time.Now().Unix() {
 		t.finish()
 	}
 }
