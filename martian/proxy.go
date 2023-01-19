@@ -50,39 +50,6 @@ var DefaultProxyIdleTimeout = 300 * time.Second
 
 //增加idle conn
 
-type IdleTimeoutConn struct {
-	timer signal.ActivityUpdater
-	Conn  net.Conn
-}
-
-func NewIdleTimeoutConn(conn net.Conn, timer signal.ActivityUpdater) *IdleTimeoutConn {
-	c := &IdleTimeoutConn{
-		Conn:  conn,
-		timer: timer,
-	}
-	return c
-}
-
-func (ic *IdleTimeoutConn) Read(buf []byte) (int, error) {
-	go ic.UpdateIdleTime()
-	return ic.Conn.Read(buf)
-}
-
-func (ic *IdleTimeoutConn) UpdateIdleTime() {
-	ic.timer.Update()
-}
-
-func (ic *IdleTimeoutConn) Write(buf []byte) (int, error) {
-	go ic.UpdateIdleTime()
-	return ic.Conn.Write(buf)
-}
-
-func (c *IdleTimeoutConn) Close() {
-	if c.Conn != nil {
-		c.Conn.Close()
-	}
-}
-
 func isCloseable(err error) bool {
 	if neterr, ok := err.(net.Error); ok && neterr.Timeout() {
 		return true
@@ -463,8 +430,8 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		log.Errorf("martian: got error while flushing response back to client: %v", err)
 	}
 
-	//cbw := bufio.NewWriter(cconn)
-	//cbr := bufio.NewReader(cconn)
+	cbw := bufio.NewWriter(cconn)
+	cbr := bufio.NewReader(cconn)
 	connCtx, cancel := context.WithCancel(context.Background())
 	cancelFunc := func() {
 		log.Infof("链接已经超时，准备关闭链接")
@@ -473,10 +440,6 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		conn.Close()
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
-	idleCbw := NewIdleTimeoutConn(cconn, timer)
-
-	idleCbr := NewIdleTimeoutConn(cconn, timer)
-	//defer idleCbw.Flush()
 
 	copySync := func(w io.Writer, r io.Reader, fn func(), wg *sync.WaitGroup) {
 		defer wg.Done()
@@ -489,14 +452,12 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	go copySync(idleCbw, brw, timer.Update, wg)
-	go copySync(brw, idleCbr, timer.Update, wg)
+	go copySync(cbw, brw, timer.Update, wg)
+	go copySync(brw, cbr, timer.Update, wg)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	wg.Wait()
 	log.Debugf("io.Copy 关闭，准备关闭链接")
-	idleCbr.Close()
-	idleCbw.Close()
 
 	log.Debugf("martian: closed CONNECT tunnel")
 	if cconn != nil {
