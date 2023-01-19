@@ -666,7 +666,10 @@ func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, erro
 		if p.proxyURL != nil && shouldUseDsProxy == true {
 
 			tr.Proxy = http.ProxyURL(p.proxyURL)
+		} else {
+			tr.Proxy = nil
 		}
+		return tr.RoundTrip(req)
 	}
 
 	return p.roundTripper.RoundTrip(req)
