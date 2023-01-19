@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	badger "github.com/dgraph-io/badger/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian/ioplus"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
@@ -45,7 +46,7 @@ const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 45 * time.Second
+var DefaultProxyIdleTimeout = 300 * time.Second
 
 //增加idle conn
 
@@ -477,9 +478,9 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	idleCbr := NewIdleTimeoutConn(cconn, timer)
 	//defer idleCbw.Flush()
 
-	copySync := func(w io.Writer, r io.Reader, wg *sync.WaitGroup) {
+	copySync := func(w io.Writer, r io.Reader, fn func(), wg *sync.WaitGroup) {
 		defer wg.Done()
-		if _, err := io.Copy(w, r); err != nil && err != io.EOF {
+		if _, err := ioplus.Copy(w, r, fn); err != nil && err != io.EOF {
 			log.Errorf("martian: failed to copy CONNECT tunnel: %v", err)
 		}
 
@@ -488,8 +489,8 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	go copySync(idleCbw, brw, wg)
-	go copySync(brw, idleCbr, wg)
+	go copySync(idleCbw, brw, timer.Update, wg)
+	go copySync(brw, idleCbr, timer.Update, wg)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	wg.Wait()

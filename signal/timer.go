@@ -23,6 +23,7 @@ type ActivityTimer struct {
 
 func (t *ActivityTimer) Update() {
 	if t.updateLock.TryLock() {
+		log.Infof("update timer for ActivityTimer")
 		go t.updated.Swap(time.Now().Add(t.tTimeout).Unix())
 	}
 }
