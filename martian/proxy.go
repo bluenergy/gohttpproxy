@@ -66,13 +66,15 @@ func isCloseable(err error) bool {
 // Proxy is an HTTP proxy with support for TLS MITM and customizable behavior.
 type Proxy struct {
 	roundTripper http.RoundTripper
-	dial         func(string, string) (net.Conn, error)
-	timeout      time.Duration
-	mitm         *mitm.Config
-	proxyURL     *url.URL
-	conns        sync.WaitGroup
-	connsMu      sync.Mutex // protects conns.Add/Wait from concurrent access
-	closing      chan bool
+	//带下级代理的RoundTripper
+	dsRoundTripper http.RoundTripper
+	dial           func(string, string) (net.Conn, error)
+	timeout        time.Duration
+	mitm           *mitm.Config
+	proxyURL       *url.URL
+	conns          sync.WaitGroup
+	connsMu        sync.Mutex // protects conns.Add/Wait from concurrent access
+	closing        chan bool
 
 	reqmod RequestModifier
 	resmod ResponseModifier
@@ -85,8 +87,17 @@ func NewProxy() *Proxy {
 		roundTripper: &http.Transport{
 			// TODO(adamtanner): This forces the http.Transport to not upgrade requests
 			// to HTTP/2 in Go 1.6+. Remove this once Martian can support HTTP/2.
-			TLSNextProto:          make(map[string]func(string, *tls.Conn) http.RoundTripper),
-			Proxy:                 http.ProxyFromEnvironment,
+			TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+			//Proxy:                 http.ProxyFromEnvironment,
+			TLSHandshakeTimeout:   4 * time.Second,
+			DisableKeepAlives:     true,
+			MaxIdleConns:          0,
+			MaxIdleConnsPerHost:   0,
+			ExpectContinueTimeout: time.Second,
+		},
+		dsRoundTripper: &http.Transport{
+			TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+			//Proxy:                 http.ProxyFromEnvironment,
 			TLSHandshakeTimeout:   4 * time.Second,
 			DisableKeepAlives:     true,
 			MaxIdleConns:          0,
@@ -126,9 +137,9 @@ func (p *Proxy) SetRoundTripper(rt http.RoundTripper) {
 func (p *Proxy) SetDownstreamProxy(proxyURL *url.URL) {
 	p.proxyURL = proxyURL
 
-	//if tr, ok := p.roundTripper.(*http.Transport); ok {
-	//tr.Proxy = http.ProxyURL(p.proxyURL)
-	//}
+	if tr, ok := p.dsRoundTripper.(*http.Transport); ok {
+		tr.Proxy = http.ProxyURL(p.proxyURL)
+	}
 }
 
 // SetTimeout sets the request timeout of the proxy.
@@ -640,38 +651,39 @@ func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, erro
 		return proxyutil.NewResponse(200, nil, req), nil
 	}
 
-	if tr, ok := p.roundTripper.(*http.Transport); ok {
-		//TODO 如果域名不在ch86cidr内，就启用proxy
-		shouldUseDsProxy := true
+	//TODO 如果域名不在ch86cidr内，就启用proxy
+	shouldUseDsProxy := true
 
-		log.Infof(cm+" URL: %v", req.URL.String())
-		addr := req.URL.Host
-		log.Infof(cm+" addr: %v", addr)
-		sh := strings.Split(addr, ":")
-		hostName := sh[0]
-		log.Infof(cm+" host: %v", hostName)
+	log.Infof(cm+" URL: %v", req.URL.String())
+	addr := req.URL.Host
+	log.Infof(cm+" addr: %v", addr)
+	sh := strings.Split(addr, ":")
+	hostName := sh[0]
+	log.Infof(cm+" host: %v", hostName)
 
-		ip, err := net.LookupIP(hostName)
-		if err == nil {
-			log.Infof(cm+" ip: %v", ip)
-			if p.inCh86cidr(ip[0]) == true {
-				shouldUseDsProxy = false
-				log.Infof(cm + " In ch86cidr , not use ds proxy")
-			} else {
-				log.Infof(cm + " not in ch86cidr, use ds proxy")
-			}
-		}
-
-		log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
-		if p.proxyURL != nil && shouldUseDsProxy == true {
-
-			tr.Proxy = http.ProxyURL(p.proxyURL)
+	ip, err := net.LookupIP(hostName)
+	if err == nil {
+		log.Infof(cm+" ip: %v", ip)
+		if p.inCh86cidr(ip[0]) == true {
+			shouldUseDsProxy = false
+			log.Infof(cm + " In ch86cidr , not use ds proxy")
 		} else {
-			tr.Proxy = nil
+			log.Infof(cm + " not in ch86cidr, use ds proxy")
 		}
-		return tr.RoundTrip(req)
 	}
 
+	log.Infof(cm+"p.proxyURL: %+v, shouldUseDsProxy: %+v", p.proxyURL, shouldUseDsProxy)
+
+	if p.proxyURL != nil && shouldUseDsProxy == true {
+		if tr, ok := p.dsRoundTripper.(*http.Transport); ok {
+			tr.Proxy = http.ProxyURL(p.proxyURL)
+			return tr.RoundTrip(req)
+		}
+	} else {
+		if tr, ok := p.roundTripper.(*http.Transport); ok {
+			return tr.RoundTrip(req)
+		}
+	}
 	return p.roundTripper.RoundTrip(req)
 }
 
