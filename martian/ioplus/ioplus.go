@@ -53,12 +53,12 @@ func InnerCopyBuffer(dst io.Writer, src io.Reader, buf []byte, fn func()) (writt
 		buf = make([]byte, size)
 	}
 	for {
+		//执行回调
+		if fn != nil {
+			go fn()
+		}
 		nr, er := src.Read(buf)
 		if nr > 0 {
-			//执行回调
-			if fn != nil {
-				go fn()
-			}
 			nw, ew := dst.Write(buf[0:nr])
 			if nw < 0 || nr < nw {
 				nw = 0
