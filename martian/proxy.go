@@ -20,15 +20,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	badger "github.com/dgraph-io/badger/v3"
-	"github.com/gohttpproxy/gohttpproxy/martian/ioplus"
-	"github.com/gohttpproxy/gohttpproxy/martian/log"
-	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
-	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
-	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
-	"github.com/gohttpproxy/gohttpproxy/martian/retry"
-	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
-	"github.com/gohttpproxy/gohttpproxy/signal"
 	"io"
 	"net"
 	"net/http"
@@ -38,6 +29,16 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	badger "github.com/dgraph-io/badger/v3"
+	"github.com/gohttpproxy/gohttpproxy/martian/ioplus"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
+	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
+	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
+	"github.com/gohttpproxy/gohttpproxy/martian/retry"
+	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
+	"github.com/gohttpproxy/gohttpproxy/signal"
 )
 
 const MaxRetries = 7
@@ -46,7 +47,7 @@ const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 300 * time.Second
+var DefaultProxyIdleTimeout = 50 * time.Second
 
 //增加idle conn
 
