@@ -22,9 +22,11 @@ type ActivityTimer struct {
 }
 
 func (t *ActivityTimer) Update() {
-	tsn := time.Now().Add(t.tTimeout).Unix()
-	log.Infof("update timer for ActivityTimer:%v", tsn)
-	go t.updated.Swap(tsn)
+	if t.updateLock.TryLock() {
+		tsn := time.Now().Add(t.tTimeout).Unix()
+		log.Infof("update timer for ActivityTimer:%v", tsn)
+		go t.updated.Swap(tsn)
+	}
 }
 
 func (t *ActivityTimer) check() {
