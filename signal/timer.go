@@ -26,7 +26,12 @@ func (t *ActivityTimer) Update() {
 		defer t.updateLock.Unlock()
 		tsn := time.Now().Add(t.tTimeout).UnixMilli()
 		log.Infof("update timer for ActivityTimer:%v", tsn)
-		go t.updated.Swap(tsn)
+
+		tmpTold := t.updated.Load()
+
+		if tmpTold <= 0 || tsn-tmpTold > 100 {
+			go t.updated.Swap(tsn)
+		}
 	}
 }
 
