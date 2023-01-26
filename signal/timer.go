@@ -24,7 +24,7 @@ type ActivityTimer struct {
 func (t *ActivityTimer) Update() {
 	if t.updateLock.TryLock() {
 		defer t.updateLock.Unlock()
-		tsn := time.Now().Add(t.tTimeout).Unix()
+		tsn := time.Now().Add(t.tTimeout).UnixMilli()
 		log.Infof("update timer for ActivityTimer:%v", tsn)
 		go t.updated.Swap(tsn)
 	}
@@ -32,7 +32,7 @@ func (t *ActivityTimer) Update() {
 
 func (t *ActivityTimer) check() {
 	ttn := t.updated.Load()
-	if ttn <= 0 || ttn < time.Now().Unix() {
+	if ttn <= 0 || ttn < time.Now().UnixMilli() {
 		t.finish()
 	}
 }
