@@ -3,8 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	badger "github.com/dgraph-io/badger/v3"
-	"github.com/dgraph-io/badger/v3/options"
+	"github.com/dgraph-io/ristretto"
 	"github.com/gohttpproxy/gohttpproxy/martian"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"go.uber.org/zap"
@@ -20,12 +19,10 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
-	lv   = flag.Int("lv", log.Debug, "default log level")
-	h    = flag.Bool("h", false, "help")
-	ds   = flag.String("ds", "", "down stream of the proxy")
-	db   = flag.String("db", "./cidr_db", "path to the cache db")
-
+	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
+	lv    = flag.Int("lv", log.Debug, "default log level")
+	h     = flag.Bool("h", false, "help")
+	ds    = flag.String("ds", "", "down stream of the proxy")
 	sugar *zap.SugaredLogger
 )
 
@@ -65,14 +62,17 @@ func main() {
 	}()
 	p := martian.NewProxy()
 
-	if *db != "" {
-		dbo, err := badger.Open(badger.DefaultOptions(*db).WithCompression(options.CompressionType(0)))
-		if err != nil {
-			log.Infof(err.Error())
-		}
-		defer dbo.Close()
-		p.SetDbo(dbo)
+	// make cache
+
+	Cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,     // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 64,      // number of keys per Get buffer.
+	})
+	if err != nil {
+		panic(err)
 	}
+	p.SetCache(Cache)
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
 	defer p.Close()

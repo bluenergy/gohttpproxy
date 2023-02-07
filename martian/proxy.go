@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"github.com/dgraph-io/ristretto"
 	"io"
 	"net"
 	"net/http"
@@ -79,7 +80,7 @@ type Proxy struct {
 
 	reqmod RequestModifier
 	resmod ResponseModifier
-	dbo    *badger.DB
+	Cache  *ristretto.Cache
 }
 
 // NewProxy returns a new HTTP proxy.
@@ -785,49 +786,36 @@ func (p *Proxy) getItemValue(item *badger.Item) (val []byte) {
 func (p *Proxy) inCh86cidr(ip net.IP) bool {
 
 	cm := "inCh86cidr@proxy.go"
-	var resp string
-	err := p.dbo.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(ip.String()))
-		if err != nil {
-			log.Errorf(cm+" error: %v", err)
-			return err
+
+	resp, ok := p.Cache.Get(ip.String())
+
+	if !ok {
+		log.Errorf(cm+" not ok: %v, continue check ip if in cidr", ip.String())
+	} else {
+
+		if resp != "" {
+
+			cr := resp == "true"
+			log.Infof(cm+" cache hit: %v result: %v", ip.String(), cr)
+			return cr
 		}
-		val := p.getItemValue(item)
-		resp = string(val)
-		log.Infof(cm+" resp from cached: %v", resp)
-		return nil
-	})
-
-	if err != nil {
-		log.Errorf(cm+" error: %v, continue check ip if in cidr", err)
-	}
-
-	if resp != "" {
-		return resp == "true"
 	}
 
 	for _, network := range Ch86cidr {
 
 		_, subnet, _ := net.ParseCIDR(network)
 		if subnet.Contains(ip) {
-			p.dbo.Update(func(txn *badger.Txn) error {
-				txn.Set([]byte(ip.String()), []byte("true"))
-				return nil
-			})
-			log.Infof("IP: %v in subnet: %v", ip, network)
+			p.Cache.Set(ip.String(), "true", 1)
+			log.Infof("cache hit IP: %v in subnet: %v", ip, network)
 			return true
 		}
 	}
 
-	p.dbo.Update(func(txn *badger.Txn) error {
-		txn.Set([]byte(ip.String()), []byte("false"))
-		return nil
-	})
+	p.Cache.Set(ip.String(), "fasle", 1)
 	log.Infof("IP: %v  not in ch86cidr", ip)
 	return false
 }
 
-func (p *Proxy) SetDbo(dbo *badger.DB) {
-	p.dbo = dbo
-
+func (p *Proxy) SetCache(cache *ristretto.Cache) {
+	p.Cache = cache
 }
