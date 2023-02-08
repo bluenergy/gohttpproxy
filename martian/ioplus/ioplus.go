@@ -3,7 +3,11 @@ package ioplus
 import (
 	"errors"
 	"io"
+	"net"
+	"time"
 )
+
+const GLOBAL_DEAD_LINE_TIME_OUT = 45 * time.Second
 
 // Copy copies from src to dst until either EOF is reached
 // on src or an error occurs. It returns the number of bytes
@@ -55,6 +59,18 @@ func InnerCopyBuffer(dst io.Writer, src io.Reader, buf []byte, fn func()) (writt
 	for {
 		//执行回调
 		if fn != nil {
+
+			go func() {
+				if wcc, ok := src.(net.Conn); ok {
+					_ = wcc.SetReadDeadline(time.Now().Add(GLOBAL_DEAD_LINE_TIME_OUT))
+					_ = wcc.SetWriteDeadline(time.Now().Add(GLOBAL_DEAD_LINE_TIME_OUT))
+				}
+				if rcc, ok := dst.(net.Conn); ok {
+					_ = rcc.SetReadDeadline(time.Now().Add(GLOBAL_DEAD_LINE_TIME_OUT))
+					_ = rcc.SetWriteDeadline(time.Now().Add(GLOBAL_DEAD_LINE_TIME_OUT))
+				}
+			}()
+
 			go fn()
 		}
 		nr, er := src.Read(buf)
