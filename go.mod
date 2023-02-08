@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/dgraph-io/ristretto v0.1.1
 	github.com/go-errors/errors v1.4.2
 	github.com/golang/snappy v0.0.3
 	go.uber.org/zap v1.21.0
@@ -15,7 +16,6 @@ require (
 require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect
