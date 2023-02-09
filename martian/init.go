@@ -22,8 +22,8 @@ import (
 
 var (
 	level               = flag.Int("verbose", 0, "log level")
-	DefaultReadBufSize  = 96 * 1024
-	DefaultWriteBufSize = 16 * 1024
+	DefaultReadBufSize  = 32 * 1024
+	DefaultWriteBufSize = 32 * 1024
 )
 
 // Init runs common initialization code for a martian proxy.
