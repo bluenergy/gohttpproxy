@@ -469,16 +469,13 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	updaterTimed := func() {
 		timer.Update()
 
-		if wcc, ok := cconn.(net.Conn); ok {
-			log.Infof(cm + " update deadline for cconn")
-			_ = wcc.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-			_ = wcc.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-		}
-		if rcc, ok := conn.(net.Conn); ok {
-			log.Infof(cm + " update deadline for conn")
-			_ = rcc.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-			_ = rcc.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-		}
+		log.Infof(cm + " update deadline for cconn")
+		_ = cconn.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+		_ = cconn.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+
+		log.Infof(cm + " update deadline for conn")
+		_ = conn.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+		_ = conn.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
 	}
 
 	go copySync(cbw, brw, updaterTimed, wg)
