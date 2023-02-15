@@ -37,13 +37,7 @@ func Copy(dst io.Writer, src io.Reader, fn func()) (written int64, err error) {
 func InnerCopyBuffer(dst io.Writer, src io.Reader, buf []byte, fn func()) (written int64, err error) {
 	// If the reader has a WriteTo method, use it to do the copy.
 	// Avoids an allocation and a copy.
-	if wt, ok := src.(io.WriterTo); ok {
-		return wt.WriteTo(dst)
-	}
-	// Similarly, if the writer has a ReadFrom method, use it to do the copy.
-	if rt, ok := dst.(io.ReaderFrom); ok {
-		return rt.ReadFrom(src)
-	}
+	
 	if buf == nil {
 		size := 32 * 1024
 		if l, ok := src.(*io.LimitedReader); ok && int64(size) > l.N {
