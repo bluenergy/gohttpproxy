@@ -48,7 +48,7 @@ const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 600 * time.Second
+var DefaultProxyIdleTimeout = 45 * time.Second
 
 //增加idle conn
 
@@ -326,6 +326,7 @@ func (p *Proxy) readRequest(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) 
 }
 
 func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *Session, brw *bufio.ReadWriter, conn net.Conn) error {
+	cm := "handleConnectRequest@proxy.go"
 	if err := p.reqmod.ModifyRequest(req); err != nil {
 		log.Errorf("martian: error modifying CONNECT request: %v", err)
 		proxyutil.Warning(req.Header, err)
@@ -465,8 +466,23 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	go copySync(cbw, brw, timer.Update, wg)
-	go copySync(brw, cbr, timer.Update, wg)
+	updaterTimed := func() {
+		timer.Update()
+
+		if wcc, ok := cconn.(net.Conn); ok {
+			log.Infof(cm + " update deadline for cconn")
+			_ = wcc.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+			_ = wcc.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+		}
+		if rcc, ok := conn.(net.Conn); ok {
+			log.Infof(cm + " update deadline for conn")
+			_ = rcc.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+			_ = rcc.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
+		}
+	}
+
+	go copySync(cbw, brw, updaterTimed, wg)
+	go copySync(brw, cbr, updaterTimed, wg)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	wg.Wait()
