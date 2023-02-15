@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/dgraph-io/ristretto"
+	"github.com/gohttpproxy/gohttpproxy/martian/idleconn"
 	"io"
 	"net"
 	"net/http"
@@ -32,7 +33,6 @@ import (
 	"time"
 
 	badger "github.com/dgraph-io/badger/v3"
-	"github.com/gohttpproxy/gohttpproxy/martian/ioplus"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
@@ -326,7 +326,7 @@ func (p *Proxy) readRequest(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) 
 }
 
 func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *Session, brw *bufio.ReadWriter, conn net.Conn) error {
-	cm := "handleConnectRequest@proxy.go"
+	//cm := "handleConnectRequest@proxy.go"
 	if err := p.reqmod.ModifyRequest(req); err != nil {
 		log.Errorf("martian: error modifying CONNECT request: %v", err)
 		proxyutil.Warning(req.Header, err)
@@ -444,8 +444,6 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		log.Errorf("martian: got error while flushing response back to client: %v", err)
 	}
 
-	cbw := bufio.NewWriter(cconn)
-	cbr := bufio.NewReader(cconn)
 	connCtx, cancel := context.WithCancel(context.Background())
 	cancelFunc := func() {
 		log.Infof("链接已经超时，准备关闭链接")
@@ -455,9 +453,15 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 
-	copySync := func(w io.Writer, r io.Reader, fn func(), wg *sync.WaitGroup) {
+	idleCbw := idleconn.NewIdleTimeoutConnV3(cconn, timer.Update)
+
+	idleCbr := idleconn.NewIdleTimeoutConnV3(cconn, timer.Update)
+
+	idleBrw := idleconn.NewIdleTimeoutConnV3(conn, timer.Update)
+
+	copySync := func(w io.Writer, r io.Reader, wg *sync.WaitGroup) {
 		defer wg.Done()
-		if _, err := ioplus.Copy(w, r, fn); err != nil && err != io.EOF {
+		if _, err := io.Copy(w, r); err != nil && err != io.EOF {
 			log.Errorf("martian: failed to copy CONNECT tunnel: %v", err)
 		}
 
@@ -466,20 +470,8 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	updaterTimed := func() {
-		timer.Update()
-
-		log.Infof(cm + " update deadline for cconn")
-		_ = cconn.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-		_ = cconn.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-
-		log.Infof(cm + " update deadline for conn")
-		_ = conn.SetReadDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-		_ = conn.SetWriteDeadline(time.Now().Add(DefaultProxyIdleTimeout))
-	}
-
-	go copySync(cbw, brw, updaterTimed, wg)
-	go copySync(brw, cbr, updaterTimed, wg)
+	go copySync(idleCbr, idleBrw, wg)
+	go copySync(idleBrw, idleCbw, wg)
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
 	wg.Wait()
