@@ -1,10 +1,14 @@
-FROM alpine as builder
+FROM golang:alpine as builder
 RUN apk update ; \
-        apk add git go;\
+        apk  git  ;\
         export GOPATH=/opt/go; \
         mkdir -p /opt/gohttpproxy
 COPY . /opt/gohttpproxy
-RUN cd /opt/gohttpproxy &&  ls -al  && go mod download &&  go build .  && ls -al 
+RUN cd /opt/gohttpproxy &&  ls -al \
+    && go version \
+     && go mod download \
+    &&  go  build .  \
+    && ls -al
 
 RUN wget -O /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 \
  && chmod +x /usr/bin/dumb-init
