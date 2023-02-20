@@ -2,9 +2,8 @@ package signal
 
 import (
 	"context"
-	"github.com/gohttpproxy/gohttpproxy/martian/log"
+	"github.com/gohttpproxy/gohttpproxy/martian/task"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -14,69 +13,69 @@ type ActivityUpdater interface {
 
 type ActivityTimer struct {
 	sync.RWMutex
-	updated     atomic.Int64
-	tTimeout    time.Duration
-	onTimeout   func()
-	timerClosed bool
-	updateLock  sync.Mutex
+	updated   chan struct{}
+	checkTask *task.Periodic
+	onTimeout func()
 }
 
 func (t *ActivityTimer) Update() {
-	if t.updateLock.TryLock() {
-		defer t.updateLock.Unlock()
-		tsn := time.Now().Add(t.tTimeout).UnixMilli()
-
-		tmpTold := t.updated.Load()
-
-		if tmpTold <= 0 || tsn-tmpTold > 100 {
-			log.Infof("update timer for ActivityTimer:%v", tsn)
-			go t.updated.Swap(tsn)
-		}
+	select {
+	case t.updated <- struct{}{}:
+	default:
 	}
 }
 
-func (t *ActivityTimer) check() {
-	ttn := t.updated.Load()
-	if ttn <= 0 || ttn < time.Now().UnixMilli() {
+func (t *ActivityTimer) check() error {
+	select {
+	case <-t.updated:
+	default:
 		t.finish()
 	}
+	return nil
 }
 
 func (t *ActivityTimer) finish() {
 	t.Lock()
 	defer t.Unlock()
 
-	t.timerClosed = true
 	if t.onTimeout != nil {
 		t.onTimeout()
 		t.onTimeout = nil
 	}
+	if t.checkTask != nil {
+		t.checkTask.Close()
+		t.checkTask = nil
+	}
 }
 
 func (t *ActivityTimer) SetTimeout(timeout time.Duration) {
-	t.tTimeout = timeout
 	if timeout == 0 {
 		t.finish()
 		return
 	}
 
-	//过N 秒，执行一次 check
+	checkTask := &task.Periodic{
+		Interval: timeout,
+		Execute:  t.check,
+	}
+
+	t.Lock()
+
+	if t.checkTask != nil {
+		t.checkTask.Close()
+	}
+	t.checkTask = checkTask
+	t.Unlock()
 	t.Update()
-	go func() {
-		for {
-			if t.timerClosed {
-				log.Infof("ActivityTimer finish and close")
-				break
-			}
-			time.Sleep(timeout)
-			t.check()
-		}
-	}()
+	err := checkTask.Start()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func CancelAfterInactivity(ctx context.Context, cancel func(), timeout time.Duration) *ActivityTimer {
 	timer := &ActivityTimer{
-		updated:   atomic.Int64{},
+		updated:   make(chan struct{}, 1),
 		onTimeout: cancel,
 	}
 	timer.SetTimeout(timeout)
