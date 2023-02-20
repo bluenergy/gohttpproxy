@@ -7,7 +7,7 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/go-errors/errors v1.4.2
 	github.com/golang/snappy v0.0.4
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.28.1
@@ -24,7 +24,6 @@ require (
 	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/stretchr/testify v1.7.1 // indirect
 	go.opencensus.io v0.22.5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
