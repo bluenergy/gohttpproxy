@@ -79,9 +79,9 @@ func main() {
 
 	tr := &http.Transport{
 		IdleConnTimeout:       90,
-		ResponseHeaderTimeout: 6 * time.Second,
-		TLSHandshakeTimeout:   6 * time.Second,
-		ExpectContinueTimeout: 6 * time.Second,
+		ResponseHeaderTimeout: 3 * time.Second,
+		TLSHandshakeTimeout:   3 * time.Second,
+		ExpectContinueTimeout: 2 * time.Second,
 		DisableKeepAlives:     true,
 		MaxIdleConns:          0,
 		MaxIdleConnsPerHost:   -1,
@@ -103,7 +103,7 @@ func main() {
 
 	p.SetDial((&net.Dialer{
 		KeepAlive: 30 * time.Second,
-		Timeout:   6 * time.Second,
+		Timeout:   3 * time.Second,
 	}).Dial)
 	p.SetRoundTripper(tr)
 

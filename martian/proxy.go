@@ -91,20 +91,20 @@ func NewProxy() *Proxy {
 			// to HTTP/2 in Go 1.6+. Remove this once Martian can support HTTP/2.
 			TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
 			//Proxy:                 http.ProxyFromEnvironment,
-			TLSHandshakeTimeout:   6 * time.Second,
+			TLSHandshakeTimeout:   3 * time.Second,
 			DisableKeepAlives:     true,
 			MaxIdleConns:          0,
 			MaxIdleConnsPerHost:   0,
-			ExpectContinueTimeout: time.Second,
+			ExpectContinueTimeout: 2 * time.Second,
 		},
 		dsRoundTripper: &http.Transport{
 			TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
 			//Proxy:                 http.ProxyFromEnvironment,
-			TLSHandshakeTimeout:   6 * time.Second,
+			TLSHandshakeTimeout:   3 * time.Second,
 			DisableKeepAlives:     true,
 			MaxIdleConns:          0,
 			MaxIdleConnsPerHost:   0,
-			ExpectContinueTimeout: time.Second,
+			ExpectContinueTimeout: 2 * time.Second,
 		},
 		timeout: 0,
 		closing: make(chan bool),
@@ -112,7 +112,7 @@ func NewProxy() *Proxy {
 		resmod:  noop,
 	}
 	proxy.SetDial((&net.Dialer{
-		Timeout:   6 * time.Second,
+		Timeout:   3 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}).Dial)
 	return proxy
