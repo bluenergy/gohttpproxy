@@ -21,7 +21,7 @@ type ActivityTimer struct {
 func (t *ActivityTimer) Update() {
 	select {
 	case t.updated <- struct{}{}:
-	default:
+	case <-time.After(1 * time.Second):
 	}
 }
 
