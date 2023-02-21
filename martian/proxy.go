@@ -22,6 +22,7 @@ import (
 	"errors"
 	"github.com/dgraph-io/ristretto"
 	"github.com/gohttpproxy/gohttpproxy/martian/idleconn"
+	"github.com/gohttpproxy/gohttpproxy/martian/task"
 	"io"
 	"net"
 	"net/http"
@@ -459,22 +460,25 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 
 	idleBrw := idleconn.NewIdleTimeoutConnV3(conn, timer.Update)
 
-	copySync := func(w io.Writer, r io.Reader, wg *sync.WaitGroup) {
-		defer wg.Done()
+	copySync := func(w io.Writer, r io.Reader) error {
+
 		if _, err := io.Copy(w, r); err != nil && err != io.EOF {
 			log.Errorf("martian: failed to copy CONNECT tunnel: %v", err)
+			return err
 		}
 
 		log.Debugf("martian: CONNECT tunnel finished copying")
+		return nil
 	}
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
 
-	go copySync(idleCbr, idleBrw, wg)
-	go copySync(idleBrw, idleCbw, wg)
+	_ = task.Run(context.Background(), func() error {
+		return copySync(idleCbr, idleBrw)
+	}, func() error {
+		return copySync(idleBrw, idleCbw)
+	})
 
 	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
-	wg.Wait()
+
 	log.Debugf("io.Copy 关闭，准备关闭链接")
 
 	log.Debugf("martian: closed CONNECT tunnel")
