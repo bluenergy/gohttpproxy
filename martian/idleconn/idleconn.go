@@ -1,7 +1,6 @@
 package idleconn
 
 import (
-	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"net"
 )
 
@@ -17,7 +16,6 @@ func NewIdleTimeoutConnV3(conn net.Conn, fn func()) *IdleTimeoutConnV3 {
 		update:  fn,
 		Updated: make(chan bool),
 	}
-	log.Infof(" create NewIdleTimeoutConnV3")
 	return c
 }
 
