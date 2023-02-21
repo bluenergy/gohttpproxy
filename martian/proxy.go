@@ -327,42 +327,43 @@ func (p *Proxy) readRequest(ctx *Context, conn net.Conn, brw *bufio.ReadWriter) 
 }
 
 func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *Session, brw *bufio.ReadWriter, conn net.Conn) error {
+	cm := "handleConnectRequest@proxy.go"
 	//cm := "handleConnectRequest@proxy.go"
 	if err := p.reqmod.ModifyRequest(req); err != nil {
-		log.Errorf("martian: error modifying CONNECT request: %v", err)
+		log.Errorf(cm+" martian: error modifying CONNECT request: %v", err)
 		proxyutil.Warning(req.Header, err)
 	}
 	if session.Hijacked() {
-		log.Debugf("martian: connection hijacked by request modifier")
+		log.Debugf(cm + " martian: connection hijacked by request modifier")
 		return nil
 	}
 
 	if p.mitm != nil {
-		log.Debugf("martian: attempting MITM for connection: %s / %s", req.Host, req.URL.String())
+		log.Debugf(cm+" martian: attempting MITM for connection: %s / %s", req.Host, req.URL.String())
 
 		res := proxyutil.NewResponse(200, nil, req)
 
 		if err := p.resmod.ModifyResponse(res); err != nil {
-			log.Errorf("martian: error modifying CONNECT response: %v", err)
+			log.Errorf(cm+" martian: error modifying CONNECT response: %v", err)
 			proxyutil.Warning(res.Header, err)
 		}
 		if session.Hijacked() {
-			log.Infof("martian: connection hijacked by response modifier")
+			log.Infof(cm + " martian: connection hijacked by response modifier")
 			return nil
 		}
 
 		if err := res.Write(brw); err != nil {
-			log.Errorf("martian: got error while writing response back to client: %v", err)
+			log.Errorf(cm+" martian: got error while writing response back to client: %v", err)
 		}
 		if err := brw.Flush(); err != nil {
-			log.Errorf("martian: got error while flushing response back to client: %v", err)
+			log.Errorf(cm+" martian: got error while flushing response back to client: %v", err)
 		}
 
-		log.Debugf("martian: completed MITM for connection: %s", req.Host)
+		log.Debugf(cm+" martian: completed MITM for connection: %s", req.Host)
 
 		b := make([]byte, 1)
 		if _, err := brw.Read(b); err != nil {
-			log.Errorf("martian: error peeking message through CONNECT tunnel to determine type: %v", err)
+			log.Errorf(cm+" martian: error peeking message through CONNECT tunnel to determine type: %v", err)
 		}
 
 		// Drain all of the rest of the buffered data.
@@ -401,24 +402,24 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		return p.handle(ctx, conn, brw)
 	}
 
-	log.Debugf("martian: attempting to establish CONNECT tunnel: %s", req.URL.Host)
+	log.Debugf(cm+" martian: attempting to establish CONNECT tunnel: %s", req.URL.Host)
 	res, cconn, cerr := p.connect(req)
 	if cerr != nil {
-		log.Errorf("martian: failed to CONNECT: %v", cerr)
+		log.Errorf(cm+" martian: failed to CONNECT: %v", cerr)
 		res = proxyutil.NewResponse(502, nil, req)
 		proxyutil.Warning(res.Header, cerr)
 
 		if err := p.resmod.ModifyResponse(res); err != nil {
-			log.Errorf("martian: error modifying CONNECT response: %v", err)
+			log.Errorf(cm+" martian: error modifying CONNECT response: %v", err)
 			proxyutil.Warning(res.Header, err)
 		}
 		if session.Hijacked() {
-			log.Infof("martian: connection hijacked by response modifier")
+			log.Infof(cm + " martian: connection hijacked by response modifier")
 			return nil
 		}
 
 		if err := res.Write(brw); err != nil {
-			log.Errorf("martian: got error while writing response back to client: %v", err)
+			log.Errorf(cm+"martian: got error while writing response back to client: %v", err)
 		}
 		err := brw.Flush()
 		if err != nil {
@@ -447,27 +448,31 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 
 	connCtx, cancel := context.WithCancel(context.Background())
 	cancelFunc := func() {
-		log.Infof("链接已经超时，准备关闭链接")
+		log.Infof(cm + " 链接已经超时，准备关闭链接")
 		cancel()
 		cconn.Close()
 		conn.Close()
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 
-	idleCbw := idleconn.NewIdleTimeoutConnV3(cconn, timer.Update)
+	updateFunc := func() {
+		timer.Update()
+	}
 
-	idleCbr := idleconn.NewIdleTimeoutConnV3(cconn, timer.Update)
+	idleCbw := idleconn.NewIdleTimeoutConnV3(cconn, updateFunc)
 
-	idleBrw := idleconn.NewIdleTimeoutConnV3(conn, timer.Update)
+	idleCbr := idleconn.NewIdleTimeoutConnV3(cconn, updateFunc)
+
+	idleBrw := idleconn.NewIdleTimeoutConnV3(conn, updateFunc)
 
 	copySync := func(w io.Writer, r io.Reader) error {
 
 		if _, err := io.Copy(w, r); err != nil && err != io.EOF {
-			log.Errorf("martian: failed to copy CONNECT tunnel: %v", err)
+			log.Errorf(cm+" martian: failed to copy CONNECT tunnel: %v", err)
 			return err
 		}
 
-		log.Debugf("martian: CONNECT tunnel finished copying")
+		log.Debugf(cm + " martian: CONNECT tunnel finished copying")
 		return nil
 	}
 
@@ -477,11 +482,11 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		return copySync(idleBrw, idleCbw)
 	})
 
-	log.Debugf("martian: established CONNECT tunnel, proxying traffic")
+	log.Debugf(cm + " martian: established CONNECT tunnel, proxying traffic")
 
-	log.Debugf("io.Copy 关闭，准备关闭链接")
+	log.Debugf(cm + " io.Copy 关闭，准备关闭链接")
 
-	log.Debugf("martian: closed CONNECT tunnel")
+	log.Debugf(cm + " martian: closed CONNECT tunnel")
 	if cconn != nil {
 		defer cconn.Close()
 	}
@@ -489,7 +494,7 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		defer conn.Close()
 	}
 
-	log.Infof("所有链接已关闭")
+	log.Infof(cm + " 所有链接已关闭")
 
 	return errClose
 }
