@@ -2,6 +2,7 @@ package signal
 
 import (
 	"context"
+	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"github.com/gohttpproxy/gohttpproxy/martian/task"
 	"sync"
 	"time"
@@ -19,9 +20,11 @@ type ActivityTimer struct {
 }
 
 func (t *ActivityTimer) Update() {
+	cm := "Update@timer.go"
 	select {
 	case t.updated <- struct{}{}:
-	case <-time.After(1 * time.Second):
+		log.Infof(cm + " update timer for ActivityTimer")
+	case <-time.After(100 * time.Millisecond):
 	}
 }
 

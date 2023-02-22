@@ -48,7 +48,7 @@ func (ic *IdleTimeoutConnV3) UpdateIdleTime() {
 			//log.Infof(" UpdateIdleTime for now")
 			go ic.update()
 		}
-	case <-time.After(1 * time.Second):
+	case <-time.After(100 * time.Millisecond):
 	}
 }
 
