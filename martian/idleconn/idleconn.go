@@ -43,7 +43,7 @@ func (ic *IdleTimeoutConnV3) UpdateIdleTime() {
 	select {
 	case <-ic.Updated:
 		la := ic.AfterDelay.Load()
-		ic.AfterDelay.Store(time.Now().Add(5 * time.Second).Unix())
+		ic.AfterDelay.Store(time.Now().Add(1 * time.Second).Unix())
 		if la <= 0 || la <= time.Now().Unix() {
 			//log.Infof(" UpdateIdleTime for now")
 			go ic.update()
