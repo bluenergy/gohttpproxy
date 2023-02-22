@@ -450,8 +450,14 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 	cancelFunc := func() {
 		log.Infof(cm + " 链接已经超时，准备关闭链接")
 		cancel()
-		cconn.Close()
-		conn.Close()
+
+		dlTime := time.Now().Add(DefaultProxyIdleTimeout)
+		if cconn != nil {
+			cconn.SetDeadline(dlTime)
+		}
+		if conn != nil {
+			conn.SetDeadline(dlTime)
+		}
 	}
 	timer := signal.CancelAfterInactivity(connCtx, cancelFunc, DefaultProxyIdleTimeout)
 
@@ -476,22 +482,28 @@ func (p *Proxy) handleConnectRequest(ctx *Context, req *http.Request, session *S
 		return nil
 	}
 
-	_ = task.Run(context.Background(), func() error {
-		return copySync(idleCbr, idleBrw)
-	}, func() error {
-		return copySync(idleBrw, idleCbw)
-	})
+	_ = task.Run(
+		context.Background(),
+		func() error {
+			return copySync(idleCbr, idleBrw)
+		},
+		func() error {
+			return copySync(idleBrw, idleCbw)
+		},
+	)
 
 	log.Debugf(cm + " martian: established CONNECT tunnel, proxying traffic")
 
 	log.Debugf(cm + " io.Copy 关闭，准备关闭链接")
 
 	log.Debugf(cm + " martian: closed CONNECT tunnel")
+
+	dlTime := time.Now().Add(DefaultProxyIdleTimeout)
 	if cconn != nil {
-		defer cconn.Close()
+		cconn.SetDeadline(dlTime)
 	}
 	if conn != nil {
-		defer conn.Close()
+		conn.SetDeadline(dlTime)
 	}
 
 	log.Infof(cm + " 所有链接已关闭")
