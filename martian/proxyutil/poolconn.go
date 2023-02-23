@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gohttpproxy/gohttpproxy/martian/log"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,6 +30,7 @@ type PoolConn[T CloseAble] struct {
 	SleepInterval time.Duration
 	BatchSize     int
 	PdChan        chan int
+	FailedCount   atomic.Int64
 }
 
 func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, bSize int, sl time.Duration) *PoolConn[T] {
@@ -41,6 +43,7 @@ func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, 
 		BatchSize:          bSize,
 		SleepInterval:      sl,
 		PdChan:             make(chan int, maxPoolConns),
+		FailedCount:        atomic.Int64{},
 	}
 	// 获取失败，再补一个
 	return p
@@ -81,6 +84,7 @@ func (sp *PoolConn[T]) AsyncFillPool(ignoreLimit bool) {
 
 	} else {
 
+		sp.FailedCount.Add(1)
 		select {
 		case sp.PdChan <- 1:
 		case <-time.After(200 * time.Millisecond):

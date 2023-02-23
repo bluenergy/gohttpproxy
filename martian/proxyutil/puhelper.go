@@ -95,6 +95,10 @@ func (ph *PuHelper) GetPu(destStr string) *PoolConn[net.Conn] {
 				}
 			}
 		}()
+		if val.FailedCount.Load() > constants.MAX_PD_ERROR {
+			ph.CleanPu(destStr)
+			return nil
+		}
 		return val
 	}
 	return nil
