@@ -22,7 +22,7 @@ func NewPuHelper() *PuHelper {
 
 	var FMap = make(map[string]*PoolConn[net.Conn])
 	var HFList = make([]string, HF_SIZE)
-	var FMux sync.RWMutex
+	var FMux = sync.RWMutex{}
 
 	return &PuHelper{
 		FMap:   FMap,
