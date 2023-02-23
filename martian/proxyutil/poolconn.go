@@ -116,7 +116,8 @@ func (sp *PoolConn[T]) PickConnOrDialDirect() (t T, err error) {
 
 	case cnn := <-sp.cpConn:
 		return cnn, nil
-	case <-time.After(1 * time.Second):
+	case <-time.After(100 * time.Millisecond):
+		sp.FailedCount.Add(1)
 		return nilType, errors.New(" failed to obtain conn, will try later")
 	}
 }
