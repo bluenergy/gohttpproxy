@@ -19,11 +19,12 @@ import (
 )
 
 var (
-	addr  = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
-	lv    = flag.Int("lv", log.Debug, "default log level")
-	h     = flag.Bool("h", false, "help")
-	ds    = flag.String("ds", "", "down stream of the proxy")
-	sugar *zap.SugaredLogger
+	addr    = flag.String("addr", "127.0.0.1:8080", "host:port of the proxy")
+	lv      = flag.Int("lv", log.Debug, "default log level")
+	h       = flag.Bool("h", false, "help")
+	ds      = flag.String("ds", "", "down stream of the proxy")
+	profile = flag.String("profile", "server", "choose client or server")
+	sugar   *zap.SugaredLogger
 )
 
 func main() {
@@ -73,6 +74,7 @@ func main() {
 		panic(err)
 	}
 	p.SetCache(Cache)
+	p.SetProfile(profile)
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)
 	defer p.Close()

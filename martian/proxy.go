@@ -87,9 +87,10 @@ type Proxy struct {
 	connsMu        sync.Mutex // protects conns.Add/Wait from concurrent access
 	closing        chan bool
 
-	reqmod RequestModifier
-	resmod ResponseModifier
-	Cache  *ristretto.Cache
+	reqmod  RequestModifier
+	resmod  ResponseModifier
+	Cache   *ristretto.Cache
+	Profile *string
 }
 
 // NewProxy returns a new HTTP proxy.
@@ -761,22 +762,29 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 			var conn net.Conn
 			var err error
 
-			dsOnceForPh.Do(func() {
-				dsPuHelper = proxyutil.NewPuHelper()
-			})
+			if *p.Profile == "client" {
+				conn, err = p.dial("tcp", p.proxyURL.Host)
+				if err != nil {
+					return nil, nil, err
+				}
+			} else {
+				dsOnceForPh.Do(func() {
+					dsPuHelper = proxyutil.NewPuHelper()
+				})
 
-			pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
-				log.Infof(" 准备拨号")
-				return p.dial("tcp", p.proxyURL.Host)
+				pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
+					log.Infof(" 准备拨号")
+					return p.dial("tcp", p.proxyURL.Host)
 
-			})
-			if pu == nil {
-				return nil, nil, errors.New("pu is nil, will try later")
-			}
-			conn, err = pu.PickConnOrDialDirect()
-			if err != nil {
-				dsPuHelper.CleanPu(p.proxyURL.Host)
-				return nil, nil, err
+				})
+				if pu == nil {
+					return nil, nil, errors.New("pu is nil, will try later")
+				}
+				conn, err = pu.PickConnOrDialDirect()
+				if err != nil {
+					dsPuHelper.CleanPu(p.proxyURL.Host)
+					return nil, nil, err
+				}
 			}
 
 			pbw := bufio.NewWriterSize(conn, DefaultWriteBufSize)
@@ -808,18 +816,26 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 		var destStr = req.URL.Host
 
-		pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
-			log.Infof(" 准备拨号")
-			return p.dial("tcp", destStr)
+		if *p.Profile == "client" {
+			conn, err = p.dial("tcp", req.URL.Host)
+			if err != nil {
+				return err
+			}
+		} else {
 
-		})
-		if pu == nil {
-			return errors.New("pu is nil, will try later")
-		}
-		conn, err = pu.PickConnOrDialDirect()
-		if err != nil {
-			dsPuHelper.CleanPu(destStr)
-			return err
+			pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
+				log.Infof(" 准备拨号")
+				return p.dial("tcp", destStr)
+
+			})
+			if pu == nil {
+				return errors.New("pu is nil, will try later")
+			}
+			conn, err = pu.PickConnOrDialDirect()
+			if err != nil {
+				dsPuHelper.CleanPu(destStr)
+				return err
+			}
 		}
 
 		//conn, err = p.dial("tcp", req.URL.Host)
@@ -887,4 +903,8 @@ func (p *Proxy) inCh86cidr(ip net.IP) bool {
 
 func (p *Proxy) SetCache(cache *ristretto.Cache) {
 	p.Cache = cache
+}
+
+func (p *Proxy) SetProfile(profile *string) {
+	p.Profile = profile
 }
