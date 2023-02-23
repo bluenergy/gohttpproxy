@@ -8,6 +8,7 @@ require (
 	github.com/go-errors/errors v1.4.2
 	github.com/golang/snappy v0.0.4
 	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
 	golang.org/x/net v0.7.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1

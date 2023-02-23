@@ -38,6 +38,7 @@ import (
 	"github.com/gohttpproxy/gohttpproxy/martian/mitm"
 	"github.com/gohttpproxy/gohttpproxy/martian/nosigpipe"
 	"github.com/gohttpproxy/gohttpproxy/martian/proxyutil"
+
 	"github.com/gohttpproxy/gohttpproxy/martian/retry"
 	"github.com/gohttpproxy/gohttpproxy/martian/trafficshape"
 	"github.com/gohttpproxy/gohttpproxy/signal"
@@ -50,6 +51,13 @@ const MaxRetryIntervalTime = 25
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
 var DefaultProxyIdleTimeout = 45 * time.Second
+
+var dsPuHelper *proxyutil.PuHelper
+
+var puHelper *proxyutil.PuHelper
+
+var dsOnceForPh = &sync.Once{}
+var onceForPh = &sync.Once{}
 
 //增加idle conn
 
@@ -748,9 +756,26 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 			log.Debugf("martian: CONNECT with downstream proxy: %s", p.proxyURL.Host)
 
-			conn, err := p.dial("tcp", p.proxyURL.Host)
+			//conn, err := p.dial("tcp", p.proxyURL.Host)
 
+			var conn net.Conn
+			var err error
+
+			dsOnceForPh.Do(func() {
+				dsPuHelper = proxyutil.NewPuHelper()
+			})
+
+			pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
+				log.Infof(" 准备拨号")
+				return p.dial("tcp", p.proxyURL.Host)
+
+			})
+			if pu == nil {
+				return nil, nil, errors.New("pu is nil, will try later")
+			}
+			conn, err = pu.PickConnOrDialDirect()
 			if err != nil {
+				dsPuHelper.CleanPu(p.proxyURL.Host)
 				return nil, nil, err
 			}
 
@@ -775,11 +800,29 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 	//conn, err := p.dial("tcp", req.URL.Host)
 	var conn net.Conn
+
+	onceForPh.Do(func() {
+		puHelper = proxyutil.NewPuHelper()
+	})
 	if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
-		conn, err = p.dial("tcp", req.URL.Host)
+
+		var destStr = req.URL.Host
+
+		pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
+			log.Infof(" 准备拨号")
+			return p.dial("tcp", destStr)
+
+		})
+		if pu == nil {
+			return errors.New("pu is nil, will try later")
+		}
+		conn, err = pu.PickConnOrDialDirect()
 		if err != nil {
+			dsPuHelper.CleanPu(destStr)
 			return err
 		}
+
+		//conn, err = p.dial("tcp", req.URL.Host)
 
 		return nil
 	}); err != nil {
