@@ -72,10 +72,19 @@ func (sp *PoolConn[T]) AsyncFillPool(ignoreLimit bool) {
 
 			_ = tmpc.Close()
 
+			select {
+			case sp.PdChan <- 1:
+			case <-time.After(200 * time.Millisecond):
+			}
 			go log.Infof(cm + "  1秒过去了，仍然没能补充链接，先关掉")
 		}
 
 	} else {
+
+		select {
+		case sp.PdChan <- 1:
+		case <-time.After(200 * time.Millisecond):
+		}
 		go log.Infof(cm+" 拨号失败：%v", err.Error())
 	}
 
