@@ -77,7 +77,7 @@ func (ph *PuHelper) CreatePu(destStr string, f func() (net.Conn, error)) {
 
 	if _, ok := ph.FMap[destStr]; !ok {
 
-		tmpItem := NewPoolConnWithOptions[net.Conn](15, 2, 2, 45*time.Millisecond)
+		tmpItem := NewPoolConnWithOptions[net.Conn](5, 2, 2, 45*time.Millisecond)
 		tmpItem.RegisterDialer(f)
 		ph.FMap[destStr] = tmpItem
 	}
