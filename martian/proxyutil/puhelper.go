@@ -35,7 +35,37 @@ func (ph *PuHelper) CleanPu(destStr string) {
 	ph.FMux.Lock()
 	defer ph.FMux.Unlock()
 	if _, ok := ph.FMap[destStr]; ok {
-		delete(ph.FMap, destStr)
+
+		FMSIZE := len(ph.FMap)
+
+		var ch = make(chan string, FMSIZE)
+
+		var tmpMap = make(map[string]*PoolConn[net.Conn])
+
+		for i, _ := range ph.FMap {
+
+			//并发检测 元素是否应该保留
+			go func(ch chan string, i string) {
+
+				if i != destStr && slices.Contains(ph.HFList, i) {
+					ch <- i
+
+				} else {
+					ch <- ""
+				}
+
+			}(ch, i)
+		}
+
+		for j := 0; j < FMSIZE; j++ {
+			vr := <-ch
+			if vr != "" {
+				tmpMap[vr] = ph.FMap[vr]
+			}
+		}
+
+		ph.FMap = tmpMap
+
 		log.Infof("成功清理FMap, 清理后: %+v", ph.FMap)
 	}
 }
