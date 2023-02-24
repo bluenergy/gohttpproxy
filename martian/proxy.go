@@ -50,7 +50,7 @@ const MaxRetryIntervalTime = 25
 
 var errClose = errors.New("closing connection")
 var noop = Noop("martian")
-var DefaultProxyIdleTimeout = 45 * time.Second
+var DefaultProxyIdleTimeout = 240 * time.Second
 
 var dsPuHelper *proxyutil.PuHelper
 

@@ -24,7 +24,7 @@ func (t *ActivityTimer) Update() {
 	select {
 	case t.updated <- struct{}{}:
 		log.Infof(cm + " update timer for ActivityTimer")
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(200 * time.Millisecond):
 	}
 }
 
@@ -77,8 +77,14 @@ func (t *ActivityTimer) SetTimeout(timeout time.Duration) {
 }
 
 func CancelAfterInactivity(ctx context.Context, cancel func(), timeout time.Duration) *ActivityTimer {
+	ch := make(chan struct{}, 1)
+	select {
+
+	case ch <- struct{}{}:
+	case <-time.After(200 * time.Millisecond):
+	}
 	timer := &ActivityTimer{
-		updated:   make(chan struct{}, 1),
+		updated:   ch,
 		onTimeout: cancel,
 	}
 	timer.SetTimeout(timeout)
