@@ -833,7 +833,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 			}
 			conn, err = pu.PickConnOrDialDirect()
 			if err != nil {
-				dsPuHelper.CleanPu(destStr)
+				puHelper.CleanPu(destStr)
 				return err
 			}
 		}
