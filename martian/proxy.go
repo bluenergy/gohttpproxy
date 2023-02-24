@@ -816,25 +816,31 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 		var destStr = req.URL.Host
 
-		if *p.Profile == "client" {
+		if !strings.Contains(destStr, "127.0.0.1") {
+
 			conn, err = p.dial("tcp", req.URL.Host)
-			if err != nil {
-				return err
-			}
 		} else {
 
-			pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
-				log.Infof(" 准备拨号")
-				return p.dial("tcp", destStr)
+			if *p.Profile == "client" {
+				conn, err = p.dial("tcp", req.URL.Host)
+				if err != nil {
+					return err
+				}
+			} else {
 
-			})
-			if pu == nil {
-				return errors.New("pu is nil, will try later")
-			}
-			conn, err = pu.PickConnOrDialDirect()
-			if err != nil {
-				puHelper.CleanPu(destStr)
-				return err
+				pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
+					log.Infof(" 准备拨号")
+					return p.dial("tcp", destStr)
+
+				})
+				if pu == nil {
+					return errors.New("pu is nil, will try later")
+				}
+				conn, err = pu.PickConnOrDialDirect()
+				if err != nil {
+					puHelper.CleanPu(destStr)
+					return err
+				}
 			}
 		}
 
