@@ -1,6 +1,7 @@
 package idleconn
 
 import (
+	"errors"
 	"net"
 	"sync/atomic"
 	"time"
@@ -35,7 +36,12 @@ func (ic *IdleTimeoutConnV3) Read(buf []byte) (int, error) {
 	case ic.Updated <- true:
 	default:
 	}
-	return ic.Conn.Read(buf)
+
+	if ic.Conn != nil {
+
+		return ic.Conn.Read(buf)
+	}
+	return 0, errors.New(" failed to read")
 }
 
 func (ic *IdleTimeoutConnV3) UpdateIdleTime() {
@@ -59,7 +65,11 @@ func (ic *IdleTimeoutConnV3) Write(buf []byte) (int, error) {
 	case ic.Updated <- true:
 	default:
 	}
-	return ic.Conn.Write(buf)
+	if ic.Conn != nil {
+
+		return ic.Conn.Write(buf)
+	}
+	return 0, errors.New(" failed to write")
 }
 
 func (c *IdleTimeoutConnV3) Close() {
