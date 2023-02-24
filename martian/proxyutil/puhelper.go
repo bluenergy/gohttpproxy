@@ -20,14 +20,10 @@ type PuHelper struct {
 
 func NewPuHelper() *PuHelper {
 
-	var FMap = make(map[string]*PoolConn[net.Conn])
-	var HFList = make([]string, HF_SIZE)
-	var FMux = sync.RWMutex{}
-
 	return &PuHelper{
-		FMap:   FMap,
-		HFList: HFList,
-		FMux:   FMux,
+		FMap:   make(map[string]*PoolConn[net.Conn]),
+		HFList: make([]string, HF_SIZE),
+		FMux:   sync.RWMutex{},
 	}
 }
 
