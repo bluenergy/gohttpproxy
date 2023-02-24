@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"github.com/gohttpproxy/gohttpproxy/martian/signal/semaphore"
+	"time"
 )
 
 // OnSuccess executes g() after f() returns nil.
@@ -32,7 +33,7 @@ func Run(ctx context.Context, tasks ...func() error) error {
 
 			select {
 			case done <- err:
-			default:
+			case <-time.After(100 * time.Millisecond):
 			}
 		}(task)
 	}
