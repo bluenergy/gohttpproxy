@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/dgraph-io/ristretto"
+	"github.com/gohttpproxy/gohttpproxy/martian/constants"
 	"github.com/gohttpproxy/gohttpproxy/martian/idleconn"
 	"github.com/gohttpproxy/gohttpproxy/martian/task"
 	"io"
@@ -782,7 +783,9 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 				}
 				conn, err = pu.PickConnOrDialDirect()
 				if err != nil {
-					dsPuHelper.CleanPu(p.proxyURL.Host)
+					if pu.FailedCount.Load() > constants.MAX_PD_ERROR {
+						go dsPuHelper.CleanPu(p.proxyURL.Host)
+					}
 					return nil, nil, err
 				}
 			}
@@ -838,7 +841,9 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 				}
 				conn, err = pu.PickConnOrDialDirect()
 				if err != nil {
-					puHelper.CleanPu(destStr)
+					if pu.FailedCount.Load() > constants.MAX_PD_ERROR {
+						go puHelper.CleanPu(destStr)
+					}
 					return err
 				}
 			}
