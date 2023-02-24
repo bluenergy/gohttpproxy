@@ -31,7 +31,7 @@ func (t *ActivityTimer) Update() {
 func (t *ActivityTimer) check() error {
 	select {
 	case <-t.updated:
-	default:
+	case <-time.After(200 * time.Millisecond):
 		t.finish()
 	}
 	return nil
