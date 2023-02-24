@@ -37,7 +37,7 @@ func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, 
 
 	p := &PoolConn[T]{
 		DialFuncRegistered: sync.Once{},
-		cpConn:             make(chan T, maxPoolConns),
+		cpConn:             make(chan T, 3*maxPoolConns),
 		MaxPoolConns:       maxPoolConns,
 		LogLimitCount:      logLimitCount,
 		BatchSize:          bSize,
