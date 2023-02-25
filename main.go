@@ -74,6 +74,7 @@ func main() {
 		panic(err)
 	}
 	p.SetCache(Cache)
+
 	p.SetProfile(profile)
 	//设置读写超时为30分钟，也就是10小时
 	//	p.SetTimeout(6 * time.Second)

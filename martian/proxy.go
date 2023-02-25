@@ -88,6 +88,7 @@ type Proxy struct {
 	reqmod  RequestModifier
 	resmod  ResponseModifier
 	Cache   *ristretto.Cache
+	IPCache *ristretto.Cache
 	Profile *string
 }
 
@@ -696,14 +697,19 @@ func (p *Proxy) roundTrip(ctx *Context, req *http.Request) (*http.Response, erro
 	hostName := sh[0]
 	log.Infof(cm+" host: %v", hostName)
 
-	ip, err := net.LookupIP(hostName)
-	if err == nil {
-		log.Infof(cm+" ip: %v", ip)
-		if p.inCh86cidr(ip[0]) == true {
-			shouldUseDsProxy = false
-			log.Infof(cm + " In ch86cidr , not use ds proxy")
+	if p.proxyURL != nil {
+		//ip, err := net.LookupIP(hostName)
+		ip, err := p.resolveIPWithHost(hostName)
+		if err == nil {
+			log.Infof(cm+" ip: %v", ip)
+			if p.inCh86cidr(ip) == true {
+				shouldUseDsProxy = false
+				log.Infof(cm + " In ch86cidr , not use ds proxy")
+			} else {
+				log.Infof(cm + " not in ch86cidr, use ds proxy")
+			}
 		} else {
-			log.Infof(cm + " not in ch86cidr, use ds proxy")
+			log.Infof(cm+" error: ", err.Error())
 		}
 	}
 
@@ -738,10 +744,10 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 		hostName := sh[0]
 		log.Infof(cm+" host: %v", hostName)
 
-		ip, err := net.LookupIP(hostName)
+		ip, err := p.resolveIPWithHost(hostName)
 		if err == nil {
 			log.Infof(cm+" ip: %v", ip)
-			if p.inCh86cidr(ip[0]) == true {
+			if p.inCh86cidr(ip) == true {
 				if strings.Contains(hostName, "bing.com") || strings.Contains(hostName, "google.com") {
 					shouldUseDsProxy = true
 				} else {
@@ -864,6 +870,29 @@ func (p *Proxy) getItemValue(item *badger.Item) (val []byte) {
 		return nil
 	}
 	return v
+}
+
+func (p *Proxy) resolveIPWithHost(host string) (ip net.IP, err error) {
+
+	ipStr, ok := p.Cache.Get(host)
+	if !ok {
+
+		ipList, err := net.LookupIP(host)
+		if err == nil {
+			log.Infof("ip List:%+v", ipList)
+			if len(ipList) > 0 {
+				p.Cache.Set(host, ipList[0].String(), 1)
+				return ipList[0], nil
+			}
+		} else {
+			log.Infof(" error: ", err.Error())
+		}
+		return nil, errors.New("can not parse ip")
+	}
+
+	outIp := net.ParseIP(ipStr.(string))
+
+	return outIp, err
 }
 func (p *Proxy) inCh86cidr(ip net.IP) bool {
 
