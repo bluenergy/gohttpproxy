@@ -31,6 +31,7 @@ type PoolConn[T CloseAble] struct {
 	BatchSize     int
 	PdChan        chan int
 	FailedCount   atomic.Int64
+	LastActivity  atomic.Int64
 }
 
 func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, bSize int, sl time.Duration) *PoolConn[T] {
@@ -44,18 +45,28 @@ func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, 
 		SleepInterval:      sl,
 		PdChan:             make(chan int, maxPoolConns),
 		FailedCount:        atomic.Int64{},
+		LastActivity:       atomic.Int64{},
 	}
 	// 获取失败，再补一个
 	return p
 }
 
 func (sp *PoolConn[T]) BackgroundJob() {
+	cm := "BackgroundJob@poolconn"
 	for {
 		select {
 		case <-sp.PdChan:
 			go sp.AsyncFillPool(true)
 		case <-time.After(100 * time.Millisecond):
 
+			lastActivity := sp.LastActivity.Load()
+			if lastActivity > 0 && lastActivity <= time.Now().UnixMilli() {
+				select {
+				case <-sp.cpConn:
+					go log.Infof(cm + " 超过1秒钟没有活跃，清理连接数")
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
 		}
 	}
 }
@@ -95,12 +106,13 @@ func (sp *PoolConn[T]) RegisterDialer(dialerFunc func() (T, error)) {
 
 func (sp *PoolConn[T]) PickConnOrDialDirect() (t T, err error) {
 	go func() {
-
+		sp.LastActivity.Store(time.Now().Add(1 * time.Second).UnixMilli())
 		select {
 		case sp.PdChan <- 1:
 		case <-time.After(100 * time.Millisecond):
 
 		}
+
 	}()
 
 	var nilType T
