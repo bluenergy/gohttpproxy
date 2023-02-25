@@ -109,7 +109,7 @@ func (sp *PoolConn[T]) RegisterDialer(dialerFunc func() (T, error)) {
 
 func (sp *PoolConn[T]) PickConnOrDialDirect() (t T, err error) {
 	go func() {
-		sp.LastActivity.Store(time.Now().Add(1 * time.Second).UnixMilli())
+		sp.LastActivity.Store(time.Now().Add(3 * time.Second).UnixMilli())
 		select {
 		case sp.PdChan <- 1:
 		case <-time.After(100 * time.Millisecond):
