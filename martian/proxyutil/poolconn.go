@@ -22,8 +22,8 @@ type BoxIConn[T CloseAble] struct {
 type PoolConn[T CloseAble] struct {
 	cpConn chan T
 
-	DialFuncRegistered sync.Once
-	DialFuncForPool    func() (T, error)
+	OnceDialFuncRegistered sync.Once
+	DialFuncForPool        func() (T, error)
 
 	MaxPoolConns  int32
 	LogLimitCount int
@@ -37,15 +37,15 @@ type PoolConn[T CloseAble] struct {
 func NewPoolConnWithOptions[T CloseAble](maxPoolConns int32, logLimitCount int, bSize int, sl time.Duration) *PoolConn[T] {
 
 	p := &PoolConn[T]{
-		DialFuncRegistered: sync.Once{},
-		cpConn:             make(chan T, 3*maxPoolConns),
-		MaxPoolConns:       maxPoolConns,
-		LogLimitCount:      logLimitCount,
-		BatchSize:          bSize,
-		SleepInterval:      sl,
-		PdChan:             make(chan int, maxPoolConns),
-		FailedCount:        atomic.Int64{},
-		LastActivity:       atomic.Int64{},
+		OnceDialFuncRegistered: sync.Once{},
+		cpConn:                 make(chan T, 3*maxPoolConns),
+		MaxPoolConns:           maxPoolConns,
+		LogLimitCount:          logLimitCount,
+		BatchSize:              bSize,
+		SleepInterval:          sl,
+		PdChan:                 make(chan int, maxPoolConns),
+		FailedCount:            atomic.Int64{},
+		LastActivity:           atomic.Int64{},
 	}
 	// 获取失败，再补一个
 	return p
@@ -98,7 +98,7 @@ func (sp *PoolConn[T]) AsyncFillPool(ignoreLimit bool) {
 }
 
 func (sp *PoolConn[T]) RegisterDialer(dialerFunc func() (T, error)) {
-	go sp.DialFuncRegistered.Do(func() {
+	go sp.OnceDialFuncRegistered.Do(func() {
 		sp.DialFuncForPool = dialerFunc
 		go sp.BackgroundJob()
 	})
@@ -126,7 +126,7 @@ func (sp *PoolConn[T]) PickConnOrDialDirect() (t T, err error) {
 	}
 }
 func (sp *PoolConn[T]) PickConnOrDial(ctx context.Context, dialerFunc func() (T, error)) (t T, err error) {
-	go sp.DialFuncRegistered.Do(func() {
+	go sp.OnceDialFuncRegistered.Do(func() {
 		sp.DialFuncForPool = dialerFunc
 		go sp.BackgroundJob()
 	})
