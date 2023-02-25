@@ -59,6 +59,9 @@ func (sp *PoolConn[T]) BackgroundJob() {
 			go sp.AsyncFillPool(true)
 		case <-time.After(100 * time.Millisecond):
 
+		}
+		go func() {
+
 			lastActivity := sp.LastActivity.Load()
 			if lastActivity > 0 && lastActivity <= time.Now().UnixMilli() {
 				select {
@@ -67,7 +70,7 @@ func (sp *PoolConn[T]) BackgroundJob() {
 				case <-time.After(100 * time.Millisecond):
 				}
 			}
-		}
+		}()
 	}
 }
 
