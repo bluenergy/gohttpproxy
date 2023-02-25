@@ -742,7 +742,11 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 		if err == nil {
 			log.Infof(cm+" ip: %v", ip)
 			if p.inCh86cidr(ip[0]) == true {
-				shouldUseDsProxy = false
+				if strings.Contains(hostName, "bing.com") || strings.Contains(hostName, "google.com") {
+					shouldUseDsProxy = true
+				} else {
+					shouldUseDsProxy = false
+				}
 				log.Infof(cm + " In ch86cidr , not use ds proxy")
 			} else {
 				log.Infof(cm + " not in ch86cidr, use ds proxy")
