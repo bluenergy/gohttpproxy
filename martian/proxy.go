@@ -52,9 +52,10 @@ var errClose = errors.New("closing connection")
 var noop = Noop("martian")
 var DefaultProxyIdleTimeout = 240 * time.Second
 
-var dsPuHelper = proxyutil.NewPuHelper()
-
-var puHelper = proxyutil.NewPuHelper()
+type FCC struct {
+	TargetURL string
+	Cnn       net.Conn
+}
 
 //增加idle conn
 
@@ -762,10 +763,11 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 
 			var conn net.Conn
 			//if *p.Profile == "client" {
-				conn, err = p.dial("tcp", p.proxyURL.Host)
-				if err != nil {
-					return nil, nil, err
-				}
+			conn, err = p.dial("tcp", p.proxyURL.Host)
+
+			if err != nil {
+				return nil, nil, err
+			}
 			/*} else {
 
 				pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
