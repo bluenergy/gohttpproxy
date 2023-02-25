@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/dgraph-io/ristretto"
-	"github.com/gohttpproxy/gohttpproxy/martian/constants"
 	"github.com/gohttpproxy/gohttpproxy/martian/idleconn"
 	"github.com/gohttpproxy/gohttpproxy/martian/task"
 	"io"
@@ -726,7 +725,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	//TODO check if the host in ch n route
 	cm := "connect@proxy.go"
 
-	var err error
+	//var err error
 	if p.proxyURL != nil {
 
 		shouldUseDsProxy := true
@@ -762,14 +761,12 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 			//conn, err := p.dial("tcp", p.proxyURL.Host)
 
 			var conn net.Conn
-			var err error
-
-			if *p.Profile == "client" {
+			//if *p.Profile == "client" {
 				conn, err = p.dial("tcp", p.proxyURL.Host)
 				if err != nil {
 					return nil, nil, err
 				}
-			} else {
+			/*} else {
 
 				pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
 					log.Infof(" 准备拨号")
@@ -786,7 +783,7 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 					}
 					return nil, nil, err
 				}
-			}
+			}*/
 
 			pbw := bufio.NewWriterSize(conn, DefaultWriteBufSize)
 			pbr := bufio.NewReaderSize(conn, DefaultReadBufSize)
@@ -813,8 +810,9 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 
 		var destStr = req.URL.Host
+		var err error
 
-		pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
+		/*pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
 			log.Infof(" 准备拨号")
 			return p.dial("tcp", destStr)
 
@@ -828,10 +826,14 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 				go puHelper.CleanPu(destStr)
 			}
 			return err
-		}
+		}*/
 
 		//conn, err = p.dial("tcp", req.URL.Host)
+		conn, err = p.dial("tcp", destStr)
+		if err != nil {
 
+			return err
+		}
 		return nil
 	}); err != nil {
 
