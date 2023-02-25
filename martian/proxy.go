@@ -53,12 +53,9 @@ var errClose = errors.New("closing connection")
 var noop = Noop("martian")
 var DefaultProxyIdleTimeout = 240 * time.Second
 
-var dsPuHelper *proxyutil.PuHelper
+var dsPuHelper = proxyutil.NewPuHelper()
 
-var puHelper *proxyutil.PuHelper
-
-var dsOnceForPh = &sync.Once{}
-var onceForPh = &sync.Once{}
+var puHelper = proxyutil.NewPuHelper()
 
 //增加idle conn
 
@@ -769,9 +766,6 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 					return nil, nil, err
 				}
 			} else {
-				dsOnceForPh.Do(func() {
-					dsPuHelper = proxyutil.NewPuHelper()
-				})
 
 				pu := dsPuHelper.GetOrCreatePu(p.proxyURL.Host, func() (net.Conn, error) {
 					log.Infof(" 准备拨号")
@@ -812,47 +806,31 @@ func (p *Proxy) connect(req *http.Request) (*http.Response, net.Conn, error) {
 	//conn, err := p.dial("tcp", req.URL.Host)
 	var conn net.Conn
 
-	onceForPh.Do(func() {
-		puHelper = proxyutil.NewPuHelper()
-	})
 	if err := retry.Timed(MaxRetries, MaxRetryIntervalTime).On(func() error {
 
 		var destStr = req.URL.Host
 
-		if !strings.Contains(destStr, "127.0.0.1") {
+		pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
+			log.Infof(" 准备拨号")
+			return p.dial("tcp", destStr)
 
-			conn, err = p.dial("tcp", req.URL.Host)
-		} else {
-
-			if *p.Profile == "client" {
-				conn, err = p.dial("tcp", req.URL.Host)
-				if err != nil {
-					return err
-				}
-			} else {
-
-				pu := puHelper.GetOrCreatePu(destStr, func() (net.Conn, error) {
-					log.Infof(" 准备拨号")
-					return p.dial("tcp", destStr)
-
-				})
-				if pu == nil {
-					return errors.New("pu is nil, will try later")
-				}
-				conn, err = pu.PickConnOrDialDirect()
-				if err != nil {
-					if pu.FailedCount.Load() > constants.MAX_PD_ERROR {
-						go puHelper.CleanPu(destStr)
-					}
-					return err
-				}
+		})
+		if pu == nil {
+			return errors.New("pu is nil, will try later")
+		}
+		conn, err = pu.PickConnOrDialDirect()
+		if err != nil {
+			if pu.FailedCount.Load() > constants.MAX_PD_ERROR {
+				go puHelper.CleanPu(destStr)
 			}
+			return err
 		}
 
 		//conn, err = p.dial("tcp", req.URL.Host)
 
 		return nil
 	}); err != nil {
+
 		return nil, nil, err
 	}
 	//if err != nil {
