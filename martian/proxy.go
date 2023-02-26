@@ -873,9 +873,13 @@ func (p *Proxy) getItemValue(item *badger.Item) (val []byte) {
 }
 
 func (p *Proxy) resolveIPWithHost(host string) (ip net.IP, err error) {
-
+	cm := "resolveIPWithHost@proxy.go"
 	ipList, err := net.LookupIP(host)
 
+	if err != nil {
+		log.Infof(cm+" error: %+v", err)
+		return nil, err
+	}
 	return ipList[0], err
 }
 func (p *Proxy) inCh86cidr(ip net.IP) bool {
