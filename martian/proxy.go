@@ -874,57 +874,61 @@ func (p *Proxy) getItemValue(item *badger.Item) (val []byte) {
 
 func (p *Proxy) resolveIPWithHost(host string) (ip net.IP, err error) {
 
-	ipStr, ok := p.Cache.Get(host)
-	if !ok {
+	ipList, err := net.LookupIP(host)
 
-		ipList, err := net.LookupIP(host)
-		if err == nil {
-			log.Infof("ip List:%+v", ipList)
-			if len(ipList) > 0 {
-				p.Cache.Set(host, ipList[0].String(), 1)
-				return ipList[0], nil
-			}
-		} else {
-			log.Infof(" error: ", err.Error())
-		}
-		return nil, errors.New("can not parse ip")
-	}
-
-	outIp := net.ParseIP(ipStr.(string))
-
-	return outIp, err
+	return ipList[0], err
 }
 func (p *Proxy) inCh86cidr(ip net.IP) bool {
 
 	cm := "inCh86cidr@proxy.go"
 
-	resp, ok := p.Cache.Get(ip.String())
+	ipStr := ip.String()
+	resp, ok := p.Cache.Get(ipStr)
 
 	if !ok {
-		log.Errorf(cm+" not ok: %v, continue check ip if in cidr", ip.String())
+		log.Errorf(cm+" not ok: %v, continue check ip if in cidr", ipStr)
 	} else {
 
 		if resp != "" {
 
 			cr := resp == "true"
-			log.Infof(cm+" cache hit: %v result: %v", ip.String(), cr)
+			log.Infof(cm+" cache hit: %v result: %v", ipStr, cr)
 			return cr
 		}
 	}
 
+	var ch = make(chan bool, len(Ch86cidr))
 	for _, network := range Ch86cidr {
 
-		_, subnet, _ := net.ParseCIDR(network)
-		if subnet.Contains(ip) {
-			p.Cache.Set(ip.String(), "true", 1)
-			log.Infof("cache hit IP: %v in subnet: %v", ip, network)
-			return true
+		go p.parallelCheckIp(ip, network, ch)
+	}
+
+	for i := 0; i < len(Ch86cidr); i++ {
+		select {
+		case rs := <-ch:
+			if rs {
+
+				p.Cache.Set(ipStr, "true", 1)
+				return rs
+
+			}
 		}
 	}
 
-	p.Cache.Set(ip.String(), "fasle", 1)
+	p.Cache.Set(ipStr, "fasle", 1)
 	log.Infof("IP: %v  not in ch86cidr", ip)
 	return false
+}
+
+func (p *Proxy) parallelCheckIp(ip net.IP, network string, ch chan bool) {
+
+	_, subnet, _ := net.ParseCIDR(network)
+	if subnet.Contains(ip) {
+		p.Cache.Set(ip.String(), "true", 1)
+		log.Infof("cache hit IP: %v in subnet: %v", ip, network)
+		ch <- true
+	}
+	ch <- false
 }
 
 func (p *Proxy) SetCache(cache *ristretto.Cache) {
